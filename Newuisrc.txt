@@ -737,7 +737,7 @@ local scripts = {
     {name = "💪 Strong Man Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Strong%20Man%20Simulator.txt"},
     {name = "🗼 Tower Of Hell", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Tower%20Of%20Hell.txt"},
     {name = "💪 Lifting Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lifting%20Sim.txt"}
-    {name = "⛩️ Be A Parkour Ninja", url = "URL"},
+    {name = "⛩️ Be A Parkour Ninja", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Be%20A%20Parkour%20Ninja.txt"},
 }
 
 local scriptButtons = {}
