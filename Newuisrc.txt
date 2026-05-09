@@ -5,8 +5,8 @@ local Player       = Players.LocalPlayer
 local PlayerGui    = Player:WaitForChild("PlayerGui")
 
 local CORRECT_KEY  = "Syniox-X-Yusuf"
-local DISCORD_LINK = "https://discord.gg/LİNK"
-local KEY_LINK     = "https://discord.gg/LİNK"
+local DISCORD_LINK = "https://syniox-key-site.vercel.app/"
+local KEY_LINK     = "https://syniox-key-site.vercel.app/"
 
 local function safeSetClipboard(text)
     local ok = pcall(setclipboard, text)
@@ -219,7 +219,7 @@ local function buildLeftPanel(leftFrame, title, items)
     creditLbl.Position = UDim2.new(0,7,1,-34)
     creditLbl.BackgroundTransparency = 1
     creditLbl.Font = Enum.Font.GothamSemibold
-    creditLbl.Text = "🤝 Syniox Hub & Nova Hub agreement | ByHalis"
+    creditLbl.Text = "🤝 Syniox Hub & Horizon Hub Agreement | ByHalis"
     creditLbl.TextColor3 = Color3.fromRGB(180,180,180)
     creditLbl.TextSize = 10
     creditLbl.TextStrokeColor3 = Color3.fromRGB(0,0,0)
@@ -442,7 +442,7 @@ local FloatBtn = Instance.new("ImageButton")
 FloatBtn.Size = UDim2.new(0.78,0,0.78,0)
 FloatBtn.Position = UDim2.new(0.11,0,0.11,0)
 FloatBtn.BackgroundTransparency = 1
-FloatBtn.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=SENİN ID"
+FloatBtn.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=119510932324044"
 FloatBtn.ScaleType = Enum.ScaleType.Fit
 FloatBtn.ZIndex = 99999999
 FloatBtn.Parent = FloatOuter
@@ -532,7 +532,7 @@ local keyLogoImg = Instance.new("ImageLabel")
 keyLogoImg.Size = UDim2.new(0, 40, 0, 40)
 keyLogoImg.Position = UDim2.new(0, 8, 0, 4)
 keyLogoImg.BackgroundTransparency = 1
-keyLogoImg.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=SENİN ID"
+keyLogoImg.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=119510932324044"
 keyLogoImg.ScaleType = Enum.ScaleType.Fit
 keyLogoImg.ZIndex = 9999999
 keyLogoImg.Parent = RightFrame
@@ -630,7 +630,7 @@ local ldrLogoImg = Instance.new("ImageLabel")
 ldrLogoImg.Size = UDim2.new(0, 40, 0, 40)
 ldrLogoImg.Position = UDim2.new(0, 8, 0, 4)
 ldrLogoImg.BackgroundTransparency = 1
-ldrLogoImg.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=SENİN ASET ID"
+ldrLogoImg.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=119510932324044"
 ldrLogoImg.ScaleType = Enum.ScaleType.Fit
 ldrLogoImg.ZIndex = 9999999
 ldrLogoImg.Parent = LdrRight
@@ -721,12 +721,23 @@ listPad.PaddingBottom = UDim.new(0,6)
 listPad.Parent = Scroll
 
 local scripts = {
-    {name = "⏰  SC",             url = "KENDİ URLNİ EKLE"},
-    {name = "💪  SC", url = "KENDİ URLNİ EKLE"},
-    {name = "💪  SC",  url = "KENDİ URLNİ EKLE"},
-    {name = "⚡  SC",   url = "KENDİ URLNİ EKLE"},
-    {name = "⚡  SC",             url = "KENDİ URLNİ EKLE"},
-    {name = "🥷  SC",               url = "KENDİ URLNİ EKLE"},
+local scripts = {
+    {name = "⏰ Anti-Afk", url = "https://raw.githubusercontent.com/SynloxStudios/Anti-Afk-ByYusuf/refs/heads/main/Anti-Afk.lua"},
+    {name = "💪 Muscle Legends", url = "https://api.jnkie.com/api/v1/luescripts/public/4b0fdd75985e63ae862a07ec0755b4fead7bf30a5e414734f6237dfcafc4615/download"},
+    {name = "⚡ Legends Of Speed", url = "https://api.jnkie.com/api/v1/luescripts/public/35e4f0b2b067769db231f07ce7ed9cfba71f3b57ceb05c07d02cdd888523b909/download"},
+    {name = "⚔️ Blade Ball", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/blade%20ball%20v2.txt"},
+    {name = "🔪 Murder Mystery 2", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Mm2.txt"},
+    {name = "🏡 Brook Haven", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Brook%20Haven.txt"},
+    {name = "⛵ Build A Boat", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Build%20A%20Boat.txt"},
+    {name = "🌊 Escape The Tsunami", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Escape%20The%20Tsunami.txt"},
+    {name = "🪓 Lumber Tycoon 2", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lumber%20Tycoon%202.txt"},
+    {name = "🌪️ Natural Disaster", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Natural%20disaster.txt"},
+    {name = "🏢 Prison Life", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Prison%20Life.txt"},
+    {name = "👏 Slap Battles", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Slap%20battles.txt"},
+    {name = "💪 Strong Man Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Strong%20Man%20Simulator.txt"},
+    {name = "🗼 Tower Of Hell", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Tower%20Of%20Hell.txt"},
+    {name = "💪 Lifting Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lifting%20Sim.txt"}
+    {name = "⛩️ Be A Parkour Ninja", url = "URL"},
 }
 
 local scriptButtons = {}
