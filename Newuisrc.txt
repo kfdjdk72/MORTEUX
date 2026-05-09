@@ -721,7 +721,6 @@ listPad.PaddingBottom = UDim.new(0,6)
 listPad.Parent = Scroll
 
 local scripts = {
-local scripts = {
     {name = "⏰ Anti-Afk", url = "https://raw.githubusercontent.com/SynloxStudios/Anti-Afk-ByYusuf/refs/heads/main/Anti-Afk.lua"},
     {name = "💪 Muscle Legends", url = "https://api.jnkie.com/api/v1/luescripts/public/4b0fdd75985e63ae862a07ec0755b4fead7bf30a5e414734f6237dfcafc4615/download"},
     {name = "⚡ Legends Of Speed", url = "https://api.jnkie.com/api/v1/luescripts/public/35e4f0b2b067769db231f07ce7ed9cfba71f3b57ceb05c07d02cdd888523b909/download"},
@@ -736,7 +735,7 @@ local scripts = {
     {name = "👏 Slap Battles", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Slap%20battles.txt"},
     {name = "💪 Strong Man Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Strong%20Man%20Simulator.txt"},
     {name = "🗼 Tower Of Hell", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Tower%20Of%20Hell.txt"},
-    {name = "💪 Lifting Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lifting%20Sim.txt"}
+    {name = "💪 Lifting Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lifting%20Sim.txt"},
     {name = "⛩️ Be A Parkour Ninja", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Be%20A%20Parkour%20Ninja.txt"},
 }
 
