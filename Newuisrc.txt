@@ -4,7 +4,7 @@ local Players      = game:GetService("Players")
 local Player       = Players.LocalPlayer
 local PlayerGui    = Player:WaitForChild("PlayerGui")
 
-local CORRECT_KEY  = "Syniox-X-Yusuf"
+local CORRECT_KEY  = "Syniox-Yusuf"
 local DISCORD_LINK = "https://syniox-key-site.vercel.app/"
 local KEY_LINK     = "https://syniox-key-site.vercel.app/"
 
@@ -722,8 +722,8 @@ listPad.Parent = Scroll
 
 local scripts = {
     {name = "⏰ Anti-Afk", url = "https://raw.githubusercontent.com/SynloxStudios/Anti-Afk-ByYusuf/refs/heads/main/Anti-Afk.lua"},
-    {name = "💪 Muscle Legends", url = "https://api.jnkie.com/api/v1/luescripts/public/4b0fdd75985e63ae862a07ec0755b4fead7bf30a5e414734f6237dfcafc4615/download"},
-    {name = "⚡ Legends Of Speed", url = "https://api.jnkie.com/api/v1/luescripts/public/35e4f0b2b067769db231f07ce7ed9cfba71f3b57ceb05c07d02cdd888523b909/download"},
+    {name = "💪 Muscle Legends", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Muscle_Legends.txt"},
+    {name = "⚡ Legends Of Speed", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/legends%20of%20speed.txt"},
     {name = "⚔️ Blade Ball", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/blade%20ball%20v2.txt"},
     {name = "🔪 Murder Mystery 2", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Mm2.txt"},
     {name = "🏡 Brook Haven", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Brook%20Haven.txt"},
