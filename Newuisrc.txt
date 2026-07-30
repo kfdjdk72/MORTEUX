@@ -721,7 +721,7 @@ listPad.PaddingBottom = UDim.new(0,6)
 listPad.Parent = Scroll
 
 local scripts = {
-    {name = "⏰ Anti-Afk", url = "https://raw.githubusercontent.com/SynloxStudios/Anti-Afk-ByYusuf/refs/heads/main/Anti-Afk.lua"},
+    {name = "⏰ Anti-Afk", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Anti%20Afk"},
     {name = "💪 Muscle Legends", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Muscle_Legends.txt"},
     {name = "⚡ Legends Of Speed", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/legends%20of%20speed.txt"},
     {name = "⚔️ Blade Ball", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/blade%20ball%20v2.txt"},
