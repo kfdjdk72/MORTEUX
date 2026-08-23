@@ -737,6 +737,7 @@ local scripts = {
     {name = "🗼 Tower Of Hell", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Tower%20Of%20Hell.txt"},
     {name = "💪 Lifting Simulator", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Lifting%20Sim.txt"},
     {name = "⛩️ Be A Parkour Ninja", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Be%20A%20Parkour%20Ninja.txt"},
+    {name = "🏹 [FPS] Flick", url = "https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Fps%20Flick.lua"},
 }
 
 local scriptButtons = {}
