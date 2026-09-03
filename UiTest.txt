@@ -35,7 +35,7 @@ function w:CreateWindow(y)
 local z=Instance.new("Frame")
 z.Name="MainFrame"
 z.Parent=v
-z.Size=i(0,750,0,500)
+z.Size=i(0,450,0,300)
 z.Position=i(0.5,-375,0.5,-250)
 z.BackgroundColor3=m
 z.BorderSizePixel=0
