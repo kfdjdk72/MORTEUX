@@ -1,0 +1,620 @@
+local a=game:GetService("CoreGui")
+local b=game:GetService("TweenService")
+local c=game:GetService("UserInputService")
+local d=game:GetService("RunService")
+local e=game:GetService("TextService")
+local f=game:GetService("Players").LocalPlayer
+local g=f:GetMouse()
+local h=Color3.fromRGB
+local i=UDim2.new
+local j=UDim.new
+local k=Vector2.new
+local l=Enum.Font.FredokaOne
+local m=h(20,20,20)
+local n=h(245,185,35)
+local o=h(50,205,50)
+local p=h(225,50,50)
+local q=h(255,255,255)
+local r=h(0,0,0)
+local s=h(35,35,35)
+local t=h(15,15,15)
+local u=nil
+if a:FindFirstChild("DevUI")then
+a.DevUI:Destroy()
+end
+local v=Instance.new("ScreenGui")
+v.Name="DevUI"
+v.Parent=a
+v.ResetOnSpawn=false
+v.IgnoreGuiInset=true
+v.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+local w={}
+w.Elements={}
+local x=Instance.new("BindableEvent")
+function w:CreateWindow(y)
+local z=Instance.new("Frame")
+z.Name="MainFrame"
+z.Parent=v
+z.Size=i(0,750,0,500)
+z.Position=i(0.5,-375,0.5,-250)
+z.BackgroundColor3=m
+z.BorderSizePixel=0
+z.Active=true
+z.Draggable=true
+z.ClipsDescendants=false
+local A=Instance.new("UICorner")
+A.CornerRadius=j(0,12)
+A.Parent=z
+local B=Instance.new("UIStroke")
+B.Color=r
+B.Thickness=4
+B.Parent=z
+local C=Instance.new("Frame")
+C.Name="PatternPattern"
+C.Parent=z
+C.Size=i(1,0,1,0)
+C.BackgroundTransparency=1
+C.ClipsDescendants=true
+A:Clone().Parent=C
+local D=Instance.new("ImageLabel")
+D.Parent=C
+D.Size=i(2,0,2,0)
+D.Position=i(-0.5,0,-0.5,0)
+D.BackgroundTransparency=1
+D.Image="rbxassetid://6071575925"
+D.ImageTransparency=0.93
+D.ImageColor3=q
+D.ScaleType=Enum.ScaleType.Tile
+D.TileSize=i(0,150,0,150)
+local E=Instance.new("Frame")
+E.Name="HeaderBanner"
+E.Parent=z
+E.Size=i(0,220,0,45)
+E.Position=i(0,20,0,-20)
+E.BackgroundColor3=n
+E.Rotation=-3
+E.ZIndex=5
+local F=Instance.new("UICorner")
+F.CornerRadius=j(0,8)
+F.Parent=E
+local G=Instance.new("UIStroke")
+G.Color=r
+G.Thickness=3
+G.Parent=E
+local H=Instance.new("TextLabel")
+H.Parent=E
+H.Size=i(1,0,1,0)
+H.BackgroundTransparency=1
+H.Text=y
+H.Font=l
+H.TextSize=28
+H.TextColor3=r
+H.ZIndex=6
+local I=Instance.new("TextButton")
+I.Parent=z
+I.Size=i(0,40,0,40)
+I.Position=i(1,-25,0,-15)
+I.BackgroundColor3=p
+I.Text="X"
+I.Font=l
+I.TextSize=24
+I.TextColor3=q
+I.ZIndex=5
+local J=Instance.new("UICorner")
+J.CornerRadius=j(0,8)
+J.Parent=I
+local K=Instance.new("UIStroke")
+K.Color=r
+K.Thickness=3
+K.Parent=I
+I.MouseButton1Click:Connect(function()
+v.Enabled=false
+end)
+c.InputBegan:Connect(function(L,M)
+if not M and L.KeyCode==Enum.KeyCode.RightShift then
+v.Enabled=not v.Enabled
+end
+end)
+local N=Instance.new("Frame")
+N.Name="Sidebar"
+N.Parent=z
+N.Size=i(0,90,1,-40)
+N.Position=i(0,-45,0,20)
+N.BackgroundTransparency=1
+N.ZIndex=4
+local O=Instance.new("ScrollingFrame")
+O.Name="SidebarScroll"
+O.Parent=N
+O.Size=i(1,0,1,0)
+O.BackgroundTransparency=1
+O.BorderSizePixel=0
+O.ScrollBarThickness=0
+O.CanvasSize=i(0,0,0,0)
+local P=Instance.new("UIListLayout")
+P.Parent=O
+P.SortOrder=Enum.SortOrder.LayoutOrder
+P.Padding=j(0,10)
+P.HorizontalAlignment=Enum.HorizontalAlignment.Center
+P:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+O.CanvasSize=i(0,0,0,P.AbsoluteContentSize.Y+20)
+end)
+local Q=Instance.new("Frame")
+Q.Name="TabContainer"
+Q.Parent=z
+Q.Size=i(1,-70,1,-40)
+Q.Position=i(0,60,0,30)
+Q.BackgroundTransparency=1
+local R={}
+local S=nil
+function R:CreateTab(T,U)
+local V=Instance.new("TextButton")
+V.Name="TabBtn_"..T
+V.Parent=O
+V.Size=i(0,80,0,80)
+V.BackgroundColor3=h(140,170,220)
+V.Text=""
+V.ZIndex=5
+local W=Instance.new("UICorner")
+W.CornerRadius=j(0,12)
+W.Parent=V
+local X=Instance.new("UIStroke")
+X.Color=r
+X.Thickness=3
+X.Parent=V
+local Y=Instance.new("ImageLabel")
+Y.Parent=V
+Y.Size=i(0,40,0,40)
+Y.Position=i(0.5,-20,0,10)
+Y.BackgroundTransparency=1
+Y.Image=U or"rbxassetid://0"
+Y.ZIndex=6
+local Z=Instance.new("TextLabel")
+Z.Parent=V
+Z.Size=i(1,0,0,20)
+Z.Position=i(0,0,1,-25)
+Z.BackgroundTransparency=1
+Z.Text=T
+Z.Font=l
+Z.TextSize=14
+Z.TextColor3=r
+Z.ZIndex=6
+local _=Instance.new("ScrollingFrame")
+_.Name="TabPage_"..T
+_.Parent=Q
+_.Size=i(1,0,1,0)
+_.BackgroundTransparency=1
+_.BorderSizePixel=0
+_.ScrollBarThickness=6
+_.ScrollBarImageColor3=s
+_.Visible=false
+_.BottomImage="rbxassetid://9601321033"
+_.MidImage="rbxassetid://9601321033"
+_.TopImage="rbxassetid://9601321033"
+local a0=Instance.new("UIListLayout")
+a0.Parent=_
+a0.SortOrder=Enum.SortOrder.LayoutOrder
+a0.Padding=j(0,12)
+local a1=Instance.new("UIPadding")
+a1.Parent=_
+a1.PaddingLeft=j(0,10)
+a1.PaddingRight=j(0,10)
+a1.PaddingTop=j(0,10)
+a1.PaddingBottom=j(0,10)
+a0:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+_.CanvasSize=i(0,0,0,a0.AbsoluteContentSize.Y+20)
+end)
+if S==nil then
+S=_
+_.Visible=true
+V.BackgroundColor3=n
+end
+V.MouseButton1Click:Connect(function()
+for a2,a3 in pairs(Q:GetChildren())do
+if a3:IsA("ScrollingFrame")then
+a3.Visible=false
+end
+end
+for a2,a3 in pairs(O:GetChildren())do
+if a3:IsA("TextButton")then
+b:Create(a3,TweenInfo.new(0.2),{BackgroundColor3=h(140,170,220)}):Play()
+end
+end
+_.Visible=true
+b:Create(V,TweenInfo.new(0.2),{BackgroundColor3=n}):Play()
+end)
+local a4={}
+function a4:CreateGroup(a5)
+local a6=Instance.new("Frame")
+a6.Parent=_
+a6.Size=i(1,0,0,0)
+a6.BackgroundColor3=s
+a6.BackgroundTransparency=0.3
+local a7=Instance.new("UICorner")
+a7.CornerRadius=j(0,8)
+a7.Parent=a6
+local a8=Instance.new("UIStroke")
+a8.Color=r
+a8.Thickness=3
+a8.Parent=a6
+local a9=Instance.new("UIListLayout")
+a9.Parent=a6
+a9.SortOrder=Enum.SortOrder.LayoutOrder
+a9.FillDirection=Enum.FillDirection.Horizontal
+a9.Padding=j(0,15)
+local ba=Instance.new("UIPadding")
+ba.Parent=a6
+ba.PaddingLeft=j(0,10)
+ba.PaddingRight=j(0,10)
+ba.PaddingTop=j(0,10)
+ba.PaddingBottom=j(0,10)
+local bb=Instance.new("TextLabel")
+bb.Parent=a6
+bb.Size=i(1,0,0,25)
+bb.BackgroundTransparency=1
+bb.Text=a5
+bb.Font=l
+bb.TextSize=18
+bb.TextColor3=q
+bb.TextXAlignment=Enum.TextXAlignment.Left
+local bc={}
+function bc:AddSideElement()
+local bd=Instance.new("Frame")
+bd.Parent=a6
+bd.Size=i(0.5,-7,0,0)
+bd.BackgroundTransparency=1
+local be=Instance.new("UIListLayout")
+be.Parent=bd
+be.SortOrder=Enum.SortOrder.LayoutOrder
+be.Padding=j(0,8)
+be:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+bd.Size=i(0.5,-7,0,be.AbsoluteContentSize.Y)
+local bf=0
+for a2,a3 in pairs(a6:GetChildren())do
+if a3:IsA("Frame")then
+if a3.Size.Y.Offset>bf then bf=a3.Size.Y.Offset end
+end
+end
+a6.Size=i(1,0,0,bf+45)
+end)
+return bd
+end
+return bc
+end
+function a4:CreateToggle(bg,bh,bi)
+local bj=Instance.new("Frame")
+bj.Parent=bg
+bj.Size=i(1,0,0,45)
+bj.BackgroundColor3=t
+local bk=Instance.new("UICorner")
+bk.CornerRadius=j(0,6)
+bk.Parent=bj
+local bl=Instance.new("UIStroke")
+bl.Color=r
+bl.Thickness=2
+bl.Parent=bj
+local bm=Instance.new("TextLabel")
+bm.Parent=bj
+bm.Size=i(0.6,0,1,0)
+bm.Position=i(0,15,0,0)
+bm.BackgroundTransparency=1
+bm.Text=bh
+bm.Font=l
+bm.TextSize=16
+bm.TextColor3=q
+bm.TextXAlignment=Enum.TextXAlignment.Left
+local bn=Instance.new("TextLabel")
+bn.Parent=bj
+bn.Size=i(0,40,1,0)
+bn.Position=i(1,-115,0,0)
+bn.BackgroundTransparency=1
+bn.Text="OFF"
+bn.Font=l
+bn.TextSize=16
+bn.TextColor3=p
+bn.TextXAlignment=Enum.TextXAlignment.Right
+local bo=Instance.new("Frame")
+bo.Parent=bj
+bo.Size=i(0,60,0,30)
+bo.Position=i(1,-70,0.5,-15)
+bo.BackgroundColor3=t
+local bp=Instance.new("UICorner")
+bp.CornerRadius=j(0,6)
+bp.Parent=bo
+local bq=Instance.new("UIStroke")
+bq.Color=r
+bq.Thickness=2
+bq.Parent=bo
+local br=Instance.new("Frame")
+br.Parent=bo
+br.Size=i(0,24,0,24)
+br.Position=i(0,3,0.5,-12)
+br.BackgroundColor3=p
+local bs=Instance.new("UICorner")
+bs.CornerRadius=j(0,4)
+bs.Parent=br
+local bt=Instance.new("UIStroke")
+bt.Color=r
+bt.Thickness=2
+bt.Parent=br
+local bu=Instance.new("TextButton")
+bu.Parent=bo
+bu.Size=i(1,0,1,0)
+bu.BackgroundTransparency=1
+bu.Text=""
+local bv=false
+bu.MouseButton1Click:Connect(function()
+bv=not bv
+if bv then
+b:Create(br,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=i(1,-27,0.5,-12),BackgroundColor3=o}):Play()
+bn.Text="ON"
+bn.TextColor3=o
+else
+b:Create(br,TweenInfo.new(0.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=i(0,3,0.5,-12),BackgroundColor3=p}):Play()
+bn.Text="OFF"
+bn.TextColor3=p
+end
+pcall(bi,bv)
+end)
+end
+function a4:CreateButton(bg,bh,bi)
+local bw=Instance.new("TextButton")
+bw.Parent=bg
+bw.Size=i(1,0,0,40)
+bw.BackgroundColor3=o
+bw.Text=bh
+bw.Font=l
+bw.TextSize=18
+bw.TextColor3=q
+local bx=Instance.new("UICorner")
+bx.CornerRadius=j(0,6)
+bx.Parent=bw
+local by=Instance.new("UIStroke")
+by.Color=r
+by.Thickness=3
+by.Parent=bw
+bw.MouseButton1Down:Connect(function()
+b:Create(bw,TweenInfo.new(0.1),{Size=i(1,-4,0,36)}):Play()
+end)
+bw.MouseButton1Up:Connect(function()
+b:Create(bw,TweenInfo.new(0.1),{Size=i(1,0,0,40)}):Play()
+pcall(bi)
+end)
+bw.MouseLeave:Connect(function()
+b:Create(bw,TweenInfo.new(0.1),{Size=i(1,0,0,40)}):Play()
+end)
+end
+function a4:CreateInput(bg,bh,bA,bi)
+local bB=Instance.new("Frame")
+bB.Parent=bg
+bB.Size=i(1,0,0,45)
+bB.BackgroundColor3=t
+local bC=Instance.new("UICorner")
+bC.CornerRadius=j(0,6)
+bC.Parent=bB
+local bD=Instance.new("UIStroke")
+bD.Color=r
+bD.Thickness=2
+bD.Parent=bB
+local bE=Instance.new("TextLabel")
+bE.Parent=bB
+bE.Size=i(0.6,0,1,0)
+bE.Position=i(0,15,0,0)
+bE.BackgroundTransparency=1
+bE.Text=bh
+bE.Font=l
+bE.TextSize=16
+bE.TextColor3=q
+bE.TextXAlignment=Enum.TextXAlignment.Left
+local bF=Instance.new("TextBox")
+bF.Parent=bB
+bF.Size=i(0,80,0,30)
+bF.Position=i(1,-90,0.5,-15)
+bF.BackgroundColor3=m
+bF.Text=bA
+bF.Font=l
+bF.TextSize=16
+bF.TextColor3=n
+local bG=Instance.new("UICorner")
+bG.CornerRadius=j(0,4)
+bG.Parent=bF
+local bH=Instance.new("UIStroke")
+bH.Color=r
+bH.Thickness=2
+bH.Parent=bF
+bF.FocusLost:Connect(function()
+pcall(bi,bF.Text)
+end)
+end
+function a4:CreateSlider(bg,bh,bI,bJ,bK,bi)
+local bL=Instance.new("Frame")
+bL.Parent=bg
+bL.Size=i(1,0,0,60)
+bL.BackgroundColor3=t
+local bM=Instance.new("UICorner")
+bM.CornerRadius=j(0,6)
+bM.Parent=bL
+local bN=Instance.new("UIStroke")
+bN.Color=r
+bN.Thickness=2
+bN.Parent=bL
+local bO=Instance.new("TextLabel")
+bO.Parent=bL
+bO.Size=i(1,0,0,25)
+bO.Position=i(0,15,0,5)
+bO.BackgroundTransparency=1
+bO.Text=bh.." ("..bK..")"
+bO.Font=l
+bO.TextSize=16
+bO.TextColor3=q
+bO.TextXAlignment=Enum.TextXAlignment.Left
+local bP=Instance.new("Frame")
+bP.Parent=bL
+bP.Size=i(1,-30,0,12)
+bP.Position=i(0,15,0,35)
+bP.BackgroundColor3=s
+local bQ=Instance.new("UICorner")
+bQ.CornerRadius=j(1,0)
+bQ.Parent=bP
+local bR=Instance.new("UIStroke")
+bR.Color=r
+bR.Thickness=2
+bR.Parent=bP
+local bS=Instance.new("Frame")
+bS.Parent=bP
+bS.Size=i((bK-bI)/(bJ-bI),0,1,0)
+bS.BackgroundColor3=n
+local bT=Instance.new("UICorner")
+bT.CornerRadius=j(1,0)
+bT.Parent=bS
+local bU=Instance.new("Frame")
+bU.Parent=bS
+bU.Size=i(0,20,0,20)
+bU.Position=i(1,-10,0.5,-10)
+bU.BackgroundColor3=o
+local bV=Instance.new("UICorner")
+bV.CornerRadius=j(0,6)
+bV.Parent=bU
+local bW=Instance.new("UIStroke")
+bW.Color=r
+bW.Thickness=2
+bW.Parent=bU
+local bX=Instance.new("TextButton")
+bX.Parent=bP
+bX.Size=i(1,0,1,0)
+bX.BackgroundTransparency=1
+bX.Text=""
+local bY=false
+local function bZ(L)
+local c0=math.clamp((L.Position.X-bP.AbsolutePosition.X)/bP.AbsoluteSize.X,0,1)
+bS.Size=i(c0,0,1,0)
+local c1=math.floor(bI+(bJ-bI)*c0)
+bO.Text=bh.." ("..c1..")"
+pcall(bi,c1)
+end
+bX.InputBegan:Connect(function(L)
+if L.UserInputType==Enum.UserInputType.MouseButton1 then
+bY=true
+bZ(L)
+end
+end)
+c.InputEnded:Connect(function(L)
+if L.UserInputType==Enum.UserInputType.MouseButton1 then
+bY=false
+end
+end)
+c.InputChanged:Connect(function(L)
+if bY and L.UserInputType==Enum.UserInputType.MouseMovement then
+bZ(L)
+end
+end)
+end
+function a4:CreateDropdown(bg,bh,c2,bi)
+local c3=Instance.new("Frame")
+c3.Parent=bg
+c3.Size=i(1,0,0,45)
+c3.BackgroundColor3=t
+c3.ClipsDescendants=true
+local c4=Instance.new("UICorner")
+c4.CornerRadius=j(0,6)
+c4.Parent=c3
+local c5=Instance.new("UIStroke")
+c5.Color=r
+c5.Thickness=2
+c5.Parent=c3
+local c6=Instance.new("TextButton")
+c6.Parent=c3
+c6.Size=i(1,0,0,45)
+c6.BackgroundTransparency=1
+c6.Text=""
+local c7=Instance.new("TextLabel")
+c7.Parent=c6
+c7.Size=i(1,-40,1,0)
+c7.Position=i(0,15,0,0)
+c7.BackgroundTransparency=1
+c7.Text=bh
+c7.Font=l
+c7.TextSize=16
+c7.TextColor3=q
+c7.TextXAlignment=Enum.TextXAlignment.Left
+local c8=Instance.new("TextLabel")
+c8.Parent=c6
+c8.Size=i(0,30,1,0)
+c8.Position=i(1,-35,0,0)
+c8.BackgroundTransparency=1
+c8.Text="+"
+c8.Font=l
+c8.TextSize=20
+c8.TextColor3=n
+local c9=Instance.new("ScrollingFrame")
+c9.Parent=c3
+c9.Size=i(1,-10,1,-50)
+c9.Position=i(0,5,0,45)
+c9.BackgroundTransparency=1
+c9.BorderSizePixel=0
+c9.ScrollBarThickness=4
+local ca=Instance.new("UIListLayout")
+ca.Parent=c9
+ca.SortOrder=Enum.SortOrder.LayoutOrder
+ca.Padding=j(0,5)
+local cb=false
+c6.MouseButton1Click:Connect(function()
+cb=not cb
+if cb then
+b:Create(c3,TweenInfo.new(0.3),{Size=i(1,0,0,150)}):Play()
+c8.Text="-"
+else
+b:Create(c3,TweenInfo.new(0.3),{Size=i(1,0,0,45)}):Play()
+c8.Text="+"
+end
+end)
+for a2,a3 in pairs(c2)do
+local cc=Instance.new("TextButton")
+cc.Parent=c9
+cc.Size=i(1,0,0,30)
+cc.BackgroundColor3=s
+cc.Text=a3
+cc.Font=l
+cc.TextSize=14
+cc.TextColor3=q
+local cd=Instance.new("UICorner")
+cd.CornerRadius=j(0,4)
+cd.Parent=cc
+local ce=Instance.new("UIStroke")
+ce.Color=r
+ce.Thickness=1
+ce.Parent=cc
+cc.MouseButton1Click:Connect(function()
+c7.Text=bh.." : "..a3
+cb=false
+b:Create(c3,TweenInfo.new(0.3),{Size=i(1,0,0,45)}):Play()
+c8.Text="+"
+pcall(bi,a3)
+end)
+end
+ca:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+c9.CanvasSize=i(0,0,0,ca.AbsoluteContentSize.Y)
+end)
+end
+function a4:CreateColorPicker(bg,bh,cf,bi)
+end
+function a4:CreateKeybind(bg,bh,cg,bi)
+end
+function a4:CreateLabel(bg,bh)
+local ch=Instance.new("TextLabel")
+ch.Parent=bg
+ch.Size=i(1,0,0,30)
+ch.BackgroundTransparency=1
+ch.Text=bh
+ch.Font=l
+ch.TextSize=16
+ch.TextColor3=q
+ch.TextXAlignment=Enum.TextXAlignment.Left
+local ci=Instance.new("UIPadding")
+ci.Parent=ch
+ci.PaddingLeft=j(0,15)
+end
+return a4
+end
+return R
+end
+return w
