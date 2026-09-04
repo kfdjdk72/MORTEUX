@@ -28,18 +28,18 @@ background = {
 
     background_transparency = 0.1,
     main_color = Color3.fromRGB(50, 180, 255),
-    min_size = Vector2.new(430, 290),
+    min_size = Vector2.new(450, 290),
     can_resize = true
 })
 
 _G.window = window
 
-local AutoFarm = window:AddTab("Farm OP")
+local AutoFarm = window:AddTab("Pack Farm")
 AutoFarm:Show()
 
 
 -- 1️⃣ Switch: Fuerza OP
-AutoFarm:AddSwitch("Fuerza OP", function(state)
+AutoFarm:AddSwitch("Start Farm", function(state)
     getgenv()._AutoRepFarmEnabled = state
     warn("[Auto Rep Farm] Estado cambiado a:", state and "ON" or "OFF")
 end)
@@ -183,7 +183,7 @@ task.spawn(function()
     end
 end)
 
-AutoFarm:AddSwitch("Eat Egg (30 Min)", function(state)
+AutoFarm:AddSwitch("Eat Egg 🥚 (30 Min)", function(state)
     autoEatEnabled = state
     print(state and "[AutoEgg] Activado." or "[AutoEgg] Desactivado.")
 end)
@@ -288,7 +288,7 @@ AutoFarm:AddSwitch("Anti AFK", function(state)
         uselesslabelone.Position = UDim2.new(0.3,0,0,0)
         uselesslabelone.Size = UDim2.new(0,95,0,24)
         uselesslabelone.Font = Enum.Font.SourceSans
-        uselesslabelone.Text = "Anti Afk sacado de chat gpt de rafael😂"
+        uselesslabelone.Text = "Anti Afk ⏰"
         uselesslabelone.TextColor3 = Color3.fromRGB(255,255,255)
         uselesslabelone.TextSize = 14
 
@@ -436,7 +436,7 @@ end)
 
 
 -- 🎰 Botón: Girar Ruleta
-AutoFarm:AddButton("Auto Ruleta", function(state)
+AutoFarm:AddButton("Auto Wheel", function(state)
     _G.AutoSpinWheel = state
     
     if state then
