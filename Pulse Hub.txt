@@ -11,11 +11,35 @@ local virtualUser = game:GetService("VirtualUser")
 local stats = game:GetService("Stats")
 local userInputService = game:GetService("UserInputService")
 
-local addWindow = loadstring(game:HttpGet("https://kai-library.edgeone.app/", true))():AddWindow("Pulse Hub || Muscle Legends", {
-  main_color = Color3.fromRGB(50, 180, 255),
-  min_size = Vector2.new(570, 700),
-  can_resize = false,
+local library = loadstring(game:HttpGet("https://github.com/waxxan2/PrivateGui/raw/refs/heads/main/Gui.txt"))()
+_G.library = library 
+
+local player = game.Players.LocalPlayer
+_G.player = player 
+
+local displayName = player.DisplayName
+_G.displayName = displayName 
+
+local repsPerTick = 1 
+
+local window = library:AddWindow("Pulse Hub private | Muscle Legends || HI - ".. displayName, {
+    title_bar = {
+        Color3.fromRGB(180, 0, 255),
+        Color3.fromRGB(60, 0, 100),
+        Color3.fromRGB(0, 0, 0)
+    }, 
+    title_bar_transparency = 0.1, 
+    background = {
+        Color3.fromRGB(10, 5, 15),
+        Color3.fromRGB(15, 10, 25),
+        Color3.fromRGB(0, 0, 0)
+    }, 
+    background_transparency = 0.1, 
+    main_color = Color3.fromRGB(104, 34, 139),
+    min_size = Vector2.new(430, 290), 
+    can_resize = true 
 })
+_G.window = window
 
 local killing = addWindow:AddTab("Killing")
 local normalFarm = addWindow:AddTab("Normal Farm")
