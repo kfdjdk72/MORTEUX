@@ -1,5 +1,3 @@
--- [[ This script has been deobuscated by Halis, BUT I have no animosity towards the owner of this script and I respect him.  unprotected script: leak. There's nothing we can do. ]]
-
 local runService = game:GetService("RunService")
 local players = game:GetService("Players")
 local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,8 +18,6 @@ _G.player = player
 local displayName = player.DisplayName
 _G.displayName = displayName 
 
-local repsPerTick = 1 
-
 local window = library:AddWindow("Pulse Hub private | Muscle Legends || HI - ".. displayName, {
     title_bar = {
         Color3.fromRGB(180, 0, 255),
@@ -41,8 +37,8 @@ local window = library:AddWindow("Pulse Hub private | Muscle Legends || HI - "..
 })
 _G.window = window
 
-local killing = addWindow:AddTab("Killing")
-local normalFarm = addWindow:AddTab("Normal Farm")
+local normalFarm = window:AddTab("Normal Farm")
+local killing = window:AddTab("Kill")
 
 killing:AddLabel("Punch Animations").TextSize = 20
 
@@ -894,7 +890,7 @@ killing:AddSwitch("Punch When Dead (Protein Egg Required)", function(p20)
   end
 end)
 
-local gift = addWindow:AddTab("Gift")
+local gift = window:AddTab("Gift")
 gift:AddLabel("Gifting Protein egg:").TextSize = 22
 
 local proteinEggs0 = gift:AddLabel("Protein Eggs: 0")
@@ -1009,7 +1005,7 @@ task.spawn(function()
   end
 end)
 
-local shop = addWindow:AddTab("Shop")
+local shop = window:AddTab("Shop")
 
 local v31 = {
   ["Blue Crystal"] = {
@@ -2237,7 +2233,7 @@ autoEquipTools:AddSwitch("Fast Tools", function(p46)
   end
 end, "Acelera todas las herramientas")
 
-local fastFarm = addWindow:AddTab("Fast Farm")
+local fastFarm = window:AddTab("Fast Farm")
 local v81 = false
 local v82, v83
 
@@ -2945,7 +2941,7 @@ fastFarm:AddButton("Full Optimization", function()
   })
 end)
 
-local miscs = addWindow:AddTab("Miscs")
+local miscs = window:AddTab("Miscs")
 
 local miscellaneous1 = miscs:AddFolder("Miscellaneous 1")
 
@@ -3783,7 +3779,7 @@ teleport:AddButton("Brawl Regular", function()
   })
 end)
 
-local specs = addWindow:AddTab("Specs")
+local specs = window:AddTab("Stats")
 local match = ""
 
 specs:AddDropdown("Select Player", function(p74)
@@ -4051,7 +4047,7 @@ task.spawn(function()
   end
 end)
 
-local addTab = addWindow:AddTab("Calc", Color3.fromRGB(200, 100, 100))
+local addTab = window:AddTab("Calc", Color3.fromRGB(200, 100, 100))
 local v138 = 0
 local v139 = {}
 
@@ -4174,6 +4170,6 @@ packDurabilityCalculator:AddButton("Calculate Durability", function()
   end
 end)
 
-local informations = addWindow:AddTab("Informations")
+local informations = window:AddTab("Info")
 informations:AddLabel("").TextSize = 50
 informations:AddLabel("HALIS İS KING").TextSize = 30
