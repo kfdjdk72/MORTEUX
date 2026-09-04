@@ -20,18 +20,18 @@ _G.displayName = displayName
 
 local window = library:AddWindow("Pulse Hub Public | Muscle Legends || Hello - " .. displayName, {
     title_bar = {
-        Color3.fromRGB(15, 23, 42),   -- Lacivert
-        Color3.fromRGB(10, 15, 30),   -- Ara geçiş tonu
-        Color3.fromRGB(5, 8, 20),     -- Koyu lacivert
+        Color3.fromRGB(50, 110, 210),
+        Color3.fromRGB(30, 70, 150),
+        Color3.fromRGB(15, 35, 80),
     },
     title_bar_transparency = 0.1,
     background = {
-        Color3.fromRGB(15, 23, 42),   -- Lacivert arkaplan
-        Color3.fromRGB(10, 15, 30),   -- Arkaplan geçişi
-        Color3.fromRGB(5, 8, 20)      -- Neredeyse siyah koyu lacivert
+        Color3.fromRGB(20, 45, 95),
+        Color3.fromRGB(12, 28, 60),
+        Color3.fromRGB(8, 18, 40)
     },
     background_transparency = 0.1,
-    main_color = Color3.fromRGB(15, 23, 42),
+    main_color = Color3.fromRGB(20, 45, 95),
     min_size = Vector2.new(430, 290),
     can_resize = true
 })
