@@ -18,28 +18,23 @@ _G.player = player
 local displayName = player.DisplayName
 _G.displayName = displayName
 
-local repsPerTick = 1
-
 local window = library:AddWindow("Pulse Hub Public | Muscle Legends || Hello - " .. displayName, {
     title_bar = {
-    Color3.fromRGB(160, 90, 110), -- Kapalı ve mat pembe
-    Color3.fromRGB(110, 50, 70),  -- Koyu gül kurusu tonu
-    Color3.fromRGB(60, 20, 35),   -- Siyaha yakın koyu pembe geçiş
-},
-title_bar_transparency = 0.1,
-background = {
-    Color3.fromRGB(30, 15, 20),   -- Çok koyu pembe-gri arkaplan
-    Color3.fromRGB(45, 20, 30),   -- Arkaplan geçişi
-    Color3.fromRGB(15, 5, 10)     -- Neredeyse siyah koyu ton
-},
-
-
+        Color3.fromRGB(15, 23, 42),   -- Lacivert
+        Color3.fromRGB(10, 15, 30),   -- Ara geçiş tonu
+        Color3.fromRGB(5, 8, 20),     -- Koyu lacivert
+    },
+    title_bar_transparency = 0.1,
+    background = {
+        Color3.fromRGB(15, 23, 42),   -- Lacivert arkaplan
+        Color3.fromRGB(10, 15, 30),   -- Arkaplan geçişi
+        Color3.fromRGB(5, 8, 20)      -- Neredeyse siyah koyu lacivert
+    },
     background_transparency = 0.1,
-    main_color = Color3.fromRGB(50, 180, 255),
+    main_color = Color3.fromRGB(15, 23, 42),
     min_size = Vector2.new(430, 290),
     can_resize = true
 })
-
 _G.window = window
 
 local normalFarm = window:AddTab("Normal Farm")
