@@ -2908,6 +2908,7 @@ Tabs.Boss:AddSwitch("🎁 Auto Collect Chest", function(state)
     end)
 end)
 
+Tabs.Boss:AddLabel("")
 Tabs.Boss:AddLabel("🦇 Halloween Boss Farm")
 Tabs.Boss:AddLabel("---------------------")
 
@@ -2965,8 +2966,8 @@ end
 function Boss.getActiveBoss()
     if not Boss.SelectedBoss then return nil end
 
-    local bossModel = Services.Workspace:FindFirstChild(Boss.SelectedBoss)
-    if not bossModel then return nil end
+    local bossModel = Services.Workspace:FindFirstChild(Boss.SelectedBoss, true)
+    if not bossModel or not bossModel:IsA("Model") then return nil end
 
     local stats = bossModel:FindFirstChild("stats")
     local healthVal = stats and stats:FindFirstChild("Health")
