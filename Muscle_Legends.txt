@@ -21,6 +21,20 @@ local PlayerData = {
     Backpack = Services.Players.LocalPlayer:WaitForChild("Backpack")
 }
 
+local services = {
+    players = Services.Players,
+    replicatedstorage = Services.ReplicatedStorage,
+    runservice = Services.RunService,
+    tws = Services.TweenService,
+    userinputservice = Services.UserInputService,
+    httpservice = game:GetService("HttpService"),
+    virtualinputmanager = Services.VirtualInputManager,
+    lighting = Services.Lighting,
+    startergui = Services.StarterGui,
+    collectionservice = game:GetService("CollectionService"),
+    muscleEvent = PlayerData.Player:WaitForChild("muscleEvent")
+}
+
 local function formatNumber(num)
     if num >= 1e18 then return string.format("%.2fQi", num/1e18) end
     if num >= 1e15 then return string.format("%.2fQa", num/1e15) end
@@ -81,7 +95,7 @@ local window = library:AddWindow("Syniox Public | Muscle Legends || HELLO - ".. 
     }, 
     background_transparency = 0.1, 
     main_color = Color3.fromRGB(160, 0, 0), 
-    min_size = Vector2.new(450, 330), 
+    min_size = Vector2.new(520, 330), 
     can_resize = true 
 })
 
@@ -1831,6 +1845,12 @@ local PETS = {
         durability = 0,
         rebirth = 2,
     },
+["Eclipse Devourer"] = {
+		repSpeed = 0,
+		strength = 0,
+		durability = 0,
+		rebirth = 2,
+	},
 	["Inferno Unicorn"] = {
 		repSpeed = 0,
 		strength = 25,
@@ -1870,6 +1890,18 @@ local PETS = {
 	["Mythic Boss Pet"] = {
 		repSpeed = 10,
 		strength = 20,
+		durability = 0,
+		rebirth = 0,
+	},
+	["Doom Raven"] = {
+		repSpeed = 0,
+		strength = 10,
+		durability = 0,
+		rebirth = 0,
+	},
+	["Eye of Torment"] = {
+		repSpeed = 0,
+		strength = 15,
 		durability = 0,
 		rebirth = 0,
 	},
@@ -2163,7 +2195,7 @@ FastFarming.rebirths:GetPropertyChangedSignal("Value"):Connect(function()
     FastFarming.updateStats()
 end)
 
-FastFarming:AddSwitch("⚡ Fast Rebirth", function(state)
+FastFarming.FastRebirthToggle = FastFarming:AddSwitch("⚡ Fast Rebirth", function(state)
     FastFarming.running = state
     if state then
         FastFarming.hasStarted = true
@@ -2190,7 +2222,8 @@ FastFarming:AddSwitch("⚡ Fast Rebirth", function(state)
         FastFarming.Status.TextColor3 = FastFarming.hasStarted and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
         FastFarming.updateRuntime()
     end
-end):Set(false)
+end)
+FastFarming.FastRebirthToggle:Set(false)
 
 task.spawn(function()
     while true do
@@ -2206,238 +2239,376 @@ Tabs.FastFarming:AddLabel("----------------------------")
 local strengthStat = PlayerData.Player.leaderstats:WaitForChild("Strength")
 local durabilityStat = PlayerData.Player:WaitForChild("Durability")
 
-Tabs.FastFarming:AddLabel("📊 Stats:").TextSize = 17
-local stopwatchLabel = Tabs.FastFarming:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
-stopwatchLabel.TextSize = 15
-stopwatchLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+local function formatCurrentStat(value)
+    return formatNumber(value)
+end
 
-local projectedStrengthLabel = Tabs.FastFarming:AddLabel("Strength: /Min | /Hour | /Day | /Week")
-projectedStrengthLabel.TextSize = 15
-local averageStrengthLabel = Tabs.FastFarming:AddLabel("Average: /Min | /Hour | /Day | /Week")
-averageStrengthLabel.TextSize = 15
-local projectedDurabilityLabel = Tabs.FastFarming:AddLabel("Dura: /Min | /Hour | /Day | /Week")
-projectedDurabilityLabel.TextSize = 15
-local averageDurabilityLabel = Tabs.FastFarming:AddLabel("Average: /Min | /Hour | /Day | /Week")
-averageDurabilityLabel.TextSize = 15
-Tabs.FastFarming:AddLabel("")
+local function formatRate(ratePerSecond)
+    return formatNumber(ratePerSecond) .. "/S | "
+        .. formatNumber(ratePerSecond * 60) .. "/Min | "
+        .. formatNumber(ratePerSecond * 3600) .. "/Hour | "
+        .. formatNumber(ratePerSecond * 86400) .. "/Day | "
+        .. formatNumber(ratePerSecond * 604800) .. "/Week"
+end
 
-local strengthLabel = Tabs.FastFarming:AddLabel("Strength: " .. formatNumber(strengthStat.Value) .. " | Gained: 0")
-strengthLabel.TextSize = 15
-local durabilityLabel = Tabs.FastFarming:AddLabel("Durability: " .. formatNumber(durabilityStat.Value) .. " | Gained: 0")
-durabilityLabel.TextSize = 15
+local function getElapsed(tab)
+    return tab.totalElapsed + (tab.timerStarted and os.clock() - tab.startedAt or 0)
+end
 
-local startTime = 0
-local pausedElapsedTime = 0
+local function setTimerRunning(tab, enabled)
+    tab.totalElapsed = getElapsed(tab)
+    tab.startedAt = os.clock()
+    tab.timerStarted = enabled
+end
 
-local runFastRep = false
-local trackingStarted = false
+local function recordStatGain(tab, key, value)
+    local previous = tab.statSamples[key]
+    tab.statSamples[key] = value
+    if tab.running and tab.timerStarted and previous then
+        tab.statGains[key] = tab.statGains[key] + math.max(0, value - previous)
+    end
+end
 
-local strengthHistory = {}
-local durabilityHistory = {}
-local calculationInterval = 10
+local function updateRuntimeLabel(tab)
+    local elapsed = getElapsed(tab)
+    tab.Runtime.Text = string.format("Runtime: %dd %dh %dm %ds",
+        math.floor(elapsed / 86400), math.floor(elapsed % 86400 / 3600),
+        math.floor(elapsed % 3600 / 60), math.floor(elapsed % 60))
+end
 
-local initialStrength = strengthStat.Value
-local initialDurability = durabilityStat.Value
+local function resetCalculations(tab)
+    tab.totalElapsed = 0
+    tab.startedAt = os.clock()
+    tab.timerStarted = tab.running and tab.timerStarted
+    tab.nextAverageElapsed = 10
 
-local savedStrengthPerMin = 0
-local savedStrengthPerHour = 0
-local savedStrengthPerDay = 0
-local savedStrengthPerWeek = 0
+    for key in pairs(tab.statGains) do
+        tab.statGains[key] = 0
+    end
 
-local savedDurabilityPerMin = 0
-local savedDurabilityPerHour = 0
-local savedDurabilityPerDay = 0
-local savedDurabilityPerWeek = 0
+    for key, stat in pairs({Strength = tab.strength, Durability = tab.durability}) do
+        if tab.statSamples[key] ~= nil then
+            tab.statSamples[key] = stat.Value
+        end
+    end
 
-local savedAvgStrengthPerMin = 0
-local savedAvgStrengthPerHour = 0
-local savedAvgStrengthPerDay = 0
-local savedAvgStrengthPerWeek = 0
+    tab.StrengthAverage.Text = "Strength : --/S | --/Min | --/Hour | --/Day | --/Week"
+    tab.DurabilityAverage.Text = "Durability : --/S | --/Min | --/Hour | --/Day | --/Week"
 
-local savedAvgDurabilityPerMin = 0
-local savedAvgDurabilityPerHour = 0
-local savedAvgDurabilityPerDay = 0
-local savedAvgDurabilityPerWeek = 0
+    tab.updateStats()
+    tab.updateRuntime()
+end
+
+local function sendTrainingReps(state, rate, maxBurst, canSend)
+    local now = os.clock()
+    local elapsed = math.clamp(now - (state.LastAt or now), 0, 0.1)
+    state.LastAt = now
+    state.Tokens = math.min(maxBurst, (state.Tokens or 0) + rate * elapsed)
+    local sent = 0
+
+    while state.Tokens >= 1 and canSend() do
+        services.muscleEvent:FireServer("rep")
+        state.Tokens = state.Tokens - 1
+        sent = sent + 1
+    end
+
+    return sent
+end
+
+local function readDataPing()
+    local success, ping = pcall(function()
+        return Services.Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+    end)
+
+    if success and type(ping) == "number" and ping == ping and ping >= 0 and ping < math.huge then
+        return ping
+    end
+end
+
+local StrengthTab = {
+    leaderstats = PlayerData.Player:WaitForChild("leaderstats"),
+    strength = strengthStat,
+    durability = durabilityStat,
+    running = false,
+    workerActive = false,
+    startedAt = 0,
+    totalElapsed = 0,
+    timerStarted = false,
+    gainedBaselineSet = false,
+    statSamples = {Strength = strengthStat.Value, Durability = durabilityStat.Value},
+    statGains = {Strength = 0, Durability = 0},
+    initialSendRate = 700,
+    maxSendRate = 1100,
+    sendRate = math.min(700, 1100),
+    minSendRate = 350,
+    maxBurst = 100,
+    Tokens = 0,
+    pingFullSpeed = 600,
+    pingHardLimit = 1500,
+    controlInterval = 0.4,
+    stallThreshold = 5,
+    rampFactor = 1.2,
+    rampBonus = 25,
+    backoffFactor = 0.9,
+    lastControlAt = tick(),
+    lastControlStrength = strengthStat.Value,
+    lastControlDurability = durabilityStat.Value,
+    stalledIntervals = 0,
+    lastPing = nil,
+    LastAt = os.clock(),
+    nextAverageElapsed = 10,
+}
+
+StrengthTab.Status = Tabs.FastFarming:AddLabel("Status: Inactive")
+StrengthTab.Runtime = Tabs.FastFarming:AddLabel("Runtime: 0d 0h 0m 0s")
+
+StrengthTab.StrengthStats = Tabs.FastFarming:AddLabel(
+    "Strength: " .. formatCurrentStat(strengthStat.Value) .. " | Gained: 0"
+)
+
+StrengthTab.DurabilityStats = Tabs.FastFarming:AddLabel(
+    "Durability: " .. formatCurrentStat(durabilityStat.Value) .. " | Gained: 0"
+)
+
+StrengthTab.StrengthAverage = Tabs.FastFarming:AddLabel(
+    "Strength : --/S | --/Min | --/Hour | --/Day | --/Week"
+)
+
+StrengthTab.DurabilityAverage = Tabs.FastFarming:AddLabel(
+    "Durability : --/S | --/Min | --/Hour | --/Day | --/Week"
+)
+
+StrengthTab.Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+
+Tabs.FastFarming:AddButton("Reset Calcs (Strength)", function()
+    resetCalculations(StrengthTab)
+end)
+
+StrengthTab.updateRuntime = function()
+    updateRuntimeLabel(StrengthTab)
+end
+
+StrengthTab.updateStats = function()
+    StrengthTab.StrengthStats.Text = "Strength: " .. formatCurrentStat(StrengthTab.strength.Value)
+        .. " | Gained: " .. (StrengthTab.running and not StrengthTab.timerStarted
+            and "Preparing" or formatNumber(StrengthTab.statGains.Strength))
+
+    StrengthTab.DurabilityStats.Text = "Durability: " .. formatCurrentStat(StrengthTab.durability.Value)
+        .. " | Gained: " .. (StrengthTab.running and not StrengthTab.timerStarted
+            and "Preparing" or formatNumber(StrengthTab.statGains.Durability))
+end
+
+StrengthTab.updateAverage = function()
+    local elapsed = getElapsed(StrengthTab)
+    if elapsed <= 0 then return end
+
+    StrengthTab.StrengthAverage.Text = "Strength : "
+        .. formatRate(StrengthTab.statGains.Strength / elapsed)
+
+    StrengthTab.DurabilityAverage.Text = "Durability : "
+        .. formatRate(StrengthTab.statGains.Durability / elapsed)
+end
+
+StrengthTab.readPing = readDataPing
+
+StrengthTab.pingTargetRate = function(ping)
+    local tab = StrengthTab
+    local floorRate = math.min(tab.minSendRate, tab.maxSendRate)
+    local maxRate = math.max(floorRate, tab.maxSendRate)
+
+    if not ping then
+        return math.max(floorRate, math.floor(maxRate * 0.6))
+    end
+
+    if ping <= tab.pingFullSpeed then return maxRate end
+    if ping >= tab.pingHardLimit then return floorRate end
+
+    local alpha = (ping - tab.pingFullSpeed) / (tab.pingHardLimit - tab.pingFullSpeed)
+    return math.floor(maxRate + (floorRate - maxRate) * alpha)
+end
+
+StrengthTab.updateStatus = function(ping)
+    local tab = StrengthTab
+    local pingText = ping and string.format(" | Ping: %.0f ms", ping) or " | Ping: n/a"
+
+    if not tab.running then
+        tab.Status.Text = (tab.gainedBaselineSet and "Status: Paused" or "Status: Inactive") .. pingText
+        tab.Status.TextColor3 = tab.gainedBaselineSet and Color3.fromRGB(255, 180, 70) or Color3.fromRGB(255, 80, 80)
+        return
+    end
+
+    if tab.stalledIntervals >= tab.stallThreshold then
+        tab.Status.Text = "Status: Slowing for server | " .. formatNumber(tab.sendRate) .. " reps/s" .. pingText
+        tab.Status.TextColor3 = Color3.fromRGB(255, 180, 70)
+    elseif tab.sendRate < tab.pingTargetRate(ping) - 1 then
+        tab.Status.Text = "Status: Ramping | " .. formatNumber(tab.sendRate) .. " reps/s" .. pingText
+        tab.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+    else
+        tab.Status.Text = "Status: Farming | " .. formatNumber(tab.sendRate) .. " reps/s" .. pingText
+        tab.Status.TextColor3 = Color3.fromRGB(80, 255, 120)
+    end
+end
+
+StrengthTab.updateAdaptiveRate = function()
+    local tab = StrengthTab
+    local now = tick()
+
+    if now - tab.lastControlAt < tab.controlInterval then return end
+    tab.lastControlAt = now
+
+    local ping = tab.readPing()
+    tab.lastPing = ping
+
+    local floorRate = math.min(tab.minSendRate, tab.maxSendRate)
+    local target = tab.pingTargetRate(ping)
+
+    local progressed = tab.strength.Value > tab.lastControlStrength
+        or tab.durability.Value > tab.lastControlDurability
+
+    if progressed then
+        tab.stalledIntervals = 0
+        tab.sendRate = math.min(target, tab.sendRate * tab.rampFactor + tab.rampBonus)
+    else
+        tab.stalledIntervals = tab.stalledIntervals + 1
+
+        if tab.stalledIntervals >= tab.stallThreshold then
+            tab.sendRate = math.max(floorRate, tab.sendRate * tab.backoffFactor)
+        end
+    end
+
+    tab.sendRate = math.clamp(tab.sendRate, floorRate, math.max(floorRate, target))
+    tab.updateStatus(ping)
+
+    tab.lastControlStrength = tab.strength.Value
+    tab.lastControlDurability = tab.durability.Value
+end
+
+StrengthTab.startMeasurement = function()
+    local tab = StrengthTab
+
+    if not tab.running or tab.timerStarted then return end
+
+    tab.statSamples.Strength = tab.strength.Value
+    tab.statSamples.Durability = tab.durability.Value
+
+    setTimerRunning(tab, true)
+    tab.nextAverageElapsed = getElapsed(tab) + 10
+    tab.updateStats()
+end
+
+StrengthTab.workerLoop = function()
+    StrengthTab.LastAt = os.clock()
+
+    local function isRunning()
+        return StrengthTab.running
+    end
+
+    while StrengthTab.running do
+        StrengthTab.updateAdaptiveRate()
+        StrengthTab.startMeasurement()
+
+        sendTrainingReps(
+            StrengthTab,
+            StrengthTab.sendRate,
+            StrengthTab.maxBurst,
+            isRunning
+        )
+
+        Services.RunService.Heartbeat:Wait()
+    end
+
+    StrengthTab.workerActive = false
+
+    if StrengthTab.running then
+        StrengthTab.startWorker()
+    end
+end
+
+StrengthTab.startWorker = function()
+    if StrengthTab.workerActive then
+        return
+    end
+
+    StrengthTab.workerActive = true
+    task.spawn(StrengthTab.workerLoop)
+end
+
+strengthStat:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(StrengthTab, "Strength", strengthStat.Value)
+    StrengthTab.updateStats()
+end)
+
+durabilityStat:GetPropertyChangedSignal("Value"):Connect(function()
+    recordStatGain(StrengthTab, "Durability", durabilityStat.Value)
+    StrengthTab.updateStats()
+end)
+
+Tabs.FastFarming:AddTextBox("Max reps/s (Strength): " .. StrengthTab.maxSendRate, function(inputText)
+    local value = tonumber(inputText)
+
+    if not value or value ~= value or value == math.huge or value == -math.huge then
+        return
+    end
+
+    value = math.max(1, value)
+
+    if value ~= StrengthTab.maxSendRate and StrengthTab.running then
+        recordStatGain(StrengthTab, "Strength", strengthStat.Value)
+        recordStatGain(StrengthTab, "Durability", durabilityStat.Value)
+        setTimerRunning(StrengthTab, false)
+        StrengthTab.updateStats()
+    end
+
+    StrengthTab.maxSendRate = value
+    StrengthTab.sendRate = math.min(StrengthTab.sendRate, StrengthTab.maxSendRate)
+end)
+
+StrengthTab.FastRepToggle = Tabs.FastFarming:AddSwitch("💪 Start Farm", function(state)
+    recordStatGain(StrengthTab, "Strength", strengthStat.Value)
+    recordStatGain(StrengthTab, "Durability", durabilityStat.Value)
+
+    setTimerRunning(StrengthTab, false)
+
+    StrengthTab.statSamples.Strength = strengthStat.Value
+    StrengthTab.statSamples.Durability = durabilityStat.Value
+
+    StrengthTab.running = state
+    StrengthTab.Tokens = 0
+
+    if state then
+        StrengthTab.gainedBaselineSet = true
+        StrengthTab.sendRate = math.min(StrengthTab.initialSendRate, StrengthTab.maxSendRate)
+        StrengthTab.LastAt = os.clock()
+        StrengthTab.lastControlAt = tick()
+        StrengthTab.lastControlStrength = strengthStat.Value
+        StrengthTab.lastControlDurability = durabilityStat.Value
+        StrengthTab.stalledIntervals = 0
+        StrengthTab.startWorker()
+    end
+
+    StrengthTab.updateStats()
+    StrengthTab.updateStatus(StrengthTab.readPing())
+end)
+
+StrengthTab.FastRepToggle:Set(false)
 
 task.spawn(function()
-    local lastCalcTime = tick()
+    local statusTicks = 0
+
     while true do
-        local currentTime = tick()
-        local currentStrength = strengthStat.Value
-        local currentDurability = durabilityStat.Value
+        StrengthTab.updateRuntime()
+        statusTicks = statusTicks + 1
 
-        strengthLabel.Text = "Strength: " .. formatNumber(currentStrength) .. " | Gained: " .. formatNumber(currentStrength - initialStrength)
-        durabilityLabel.Text = "Durability: " .. formatNumber(currentDurability) .. " | Gained: " .. formatNumber(currentDurability - initialDurability)
-
-        if runFastRep then
-            if not trackingStarted then
-                trackingStarted = true
-                startTime = currentTime
-                strengthHistory = {}
-                durabilityHistory = {}
-                
-                if savedStrengthPerHour > 0 then
-                    projectedStrengthLabel.Text = "Strength: " .. formatNumber(savedStrengthPerMin) .. "/Min | " .. formatNumber(savedStrengthPerHour) .. "/Hour | " .. formatNumber(savedStrengthPerDay) .. "/Day | " .. formatNumber(savedStrengthPerWeek) .. "/Week"
-                    projectedDurabilityLabel.Text = "Dura: " .. formatNumber(savedDurabilityPerMin) .. "/Min | " .. formatNumber(savedDurabilityPerHour) .. "/Hour | " .. formatNumber(savedDurabilityPerDay) .. "/Day | " .. formatNumber(savedDurabilityPerWeek) .. "/Week"
-                    averageStrengthLabel.Text = "Average: " .. formatNumber(savedAvgStrengthPerMin) .. "/Min | " .. formatNumber(savedAvgStrengthPerHour) .. "/Hour | " .. formatNumber(savedAvgStrengthPerDay) .. "/Day | " .. formatNumber(savedAvgStrengthPerWeek) .. "/Week"
-                    averageDurabilityLabel.Text = "Average: " .. formatNumber(savedAvgDurabilityPerMin) .. "/Min | " .. formatNumber(savedAvgDurabilityPerHour) .. "/Hour | " .. formatNumber(savedAvgDurabilityPerDay) .. "/Day | " .. formatNumber(savedAvgDurabilityPerWeek) .. "/Week"
-                end
-            end
-            
-            local elapsedTime = pausedElapsedTime + (currentTime - startTime)
-            local days = math.floor(elapsedTime / (24 * 3600))
-            local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
-            local minutes = math.floor((elapsedTime % 3600) / 60)
-            local seconds = math.floor(elapsedTime % 60)
-            stopwatchLabel.Text = string.format("%dd %dh %dm %ds - Farming", days, hours, minutes, seconds)
-            stopwatchLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
-
-            table.insert(strengthHistory, {time = currentTime, value = currentStrength})
-            table.insert(durabilityHistory, {time = currentTime, value = currentDurability})
-
-            while #strengthHistory > 0 and currentTime - strengthHistory[1].time > calculationInterval do
-                table.remove(strengthHistory, 1)
-            end
-            while #durabilityHistory > 0 and currentTime - durabilityHistory[1].time > calculationInterval do
-                table.remove(durabilityHistory, 1)
-            end
-
-            if currentTime - lastCalcTime >= calculationInterval then
-                lastCalcTime = currentTime
-
-                if #strengthHistory >= 2 then
-                    local strengthDelta = strengthHistory[#strengthHistory].value - strengthHistory[1].value
-                    local strengthPerSecond = strengthDelta / calculationInterval
-                    savedStrengthPerMin = strengthPerSecond * 60
-                    savedStrengthPerHour = strengthPerSecond * 3600
-                    savedStrengthPerDay = strengthPerSecond * 86400
-                    savedStrengthPerWeek = strengthPerSecond * 604800
-                    projectedStrengthLabel.Text = "Strength: " .. formatNumber(savedStrengthPerMin) .. "/Min | " .. formatNumber(savedStrengthPerHour) .. "/Hour | " .. formatNumber(savedStrengthPerDay) .. "/Day | " .. formatNumber(savedStrengthPerWeek) .. "/Week"
-                end
-
-                if #durabilityHistory >= 2 then
-                    local durabilityDelta = durabilityHistory[#durabilityHistory].value - durabilityHistory[1].value
-                    local durabilityPerSecond = durabilityDelta / calculationInterval
-                    savedDurabilityPerMin = durabilityPerSecond * 60
-                    savedDurabilityPerHour = durabilityPerSecond * 3600
-                    savedDurabilityPerDay = durabilityPerSecond * 86400
-                    savedDurabilityPerWeek = durabilityPerSecond * 604800
-                    projectedDurabilityLabel.Text = "Dura: " .. formatNumber(savedDurabilityPerMin) .. "/Min | " .. formatNumber(savedDurabilityPerHour) .. "/Hour | " .. formatNumber(savedDurabilityPerDay) .. "/Day | " .. formatNumber(savedDurabilityPerWeek) .. "/Week"
-                end
-
-                local totalElapsed = pausedElapsedTime + (currentTime - startTime)
-                if totalElapsed > 0 then
-                    local avgStrengthPerSecond = (currentStrength - initialStrength) / totalElapsed
-                    savedAvgStrengthPerMin = avgStrengthPerSecond * 60
-                    savedAvgStrengthPerHour = avgStrengthPerSecond * 3600
-                    savedAvgStrengthPerDay = avgStrengthPerSecond * 86400
-                    savedAvgStrengthPerWeek = avgStrengthPerSecond * 604800
-                    averageStrengthLabel.Text = "Average: " .. formatNumber(savedAvgStrengthPerMin) .. "/Min | " .. formatNumber(savedAvgStrengthPerHour) .. "/Hour | " .. formatNumber(savedAvgStrengthPerDay) .. "/Day | " .. formatNumber(savedAvgStrengthPerWeek) .. "/Week"
-
-                    local avgDurabilityPerSecond = (currentDurability - initialDurability) / totalElapsed
-                    savedAvgDurabilityPerMin = avgDurabilityPerSecond * 60
-                    savedAvgDurabilityPerHour = avgDurabilityPerSecond * 3600
-                    savedAvgDurabilityPerDay = avgDurabilityPerSecond * 86400
-                    savedAvgDurabilityPerWeek = avgDurabilityPerSecond * 604800
-                    averageDurabilityLabel.Text = "Average: " .. formatNumber(savedAvgDurabilityPerMin) .. "/Min | " .. formatNumber(savedAvgDurabilityPerHour) .. "/Hour | " .. formatNumber(savedAvgDurabilityPerDay) .. "/Day | " .. formatNumber(savedAvgDurabilityPerWeek) .. "/Week"
-                end
-            end
-        else
-            if trackingStarted then
-                trackingStarted = false
-                pausedElapsedTime = pausedElapsedTime + (currentTime - startTime)
-                local days = math.floor(pausedElapsedTime / (24 * 3600))
-                local hours = math.floor((pausedElapsedTime % (24 * 3600)) / 3600)
-                local minutes = math.floor((pausedElapsedTime % 3600) / 60)
-                local seconds = math.floor(pausedElapsedTime % 60)
-                
-                if pausedElapsedTime > 0 then
-                    stopwatchLabel.Text = string.format("%dd %dh %dm %ds - Farming Paused", days, hours, minutes, seconds)
-                    stopwatchLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
-                else
-                    stopwatchLabel.Text = "0d 0h 0m 0s - Fast Rep Inactive"
-                    stopwatchLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-                end
-
-                strengthHistory = {}
-                durabilityHistory = {}
-            end
+        if not StrengthTab.running and statusTicks % 5 == 0 then
+            StrengthTab.updateStatus(readDataPing())
         end
 
-        task.wait(0.05)
-    end
-end)
-
-Tabs.FastFarming:AddLabel("")
-Tabs.FastFarming:AddLabel("⚡ Fast Farm:").TextSize = 17
-local farmRunning = false
-local repSpeed = 400
-local pingControl = true
-
-local networkStats = Services.Stats.Network.ServerStatsItem["Data Ping"]
-
-local function getCurrentPing()
-    return networkStats:GetValue()
-end
-
-local function getAdaptiveSpeed(ping)
-    if ping < 80 then
-        return 500
-    elseif ping < 150 then
-        return 300
-    elseif ping < 250 then
-        return 100
-    else
-        return 50
-    end
-end
-
-Tabs.FastFarming:AddTextBox("Rep Speed:", function(inputText)
-    local speedValue = tonumber(inputText)
-    if speedValue then
-        repSpeed = math.clamp(math.floor(speedValue), 1, 1000)
-    end
-end)
-
-Tabs.FastFarming:AddSwitch("Controlled Speed", function(isEnabled)
-    pingControl = isEnabled
-end):Set(true)
-
-local autoRepThread = nil
-
-local function startAutoRep()
-    autoRepThread = task.spawn(function()
-        local lastPingUpdate = time()
-        local currentPing = getCurrentPing()
-        while farmRunning do
-            if time() - lastPingUpdate > 0.5 then
-                currentPing = getCurrentPing()
-                lastPingUpdate = time()
-            end
-            local repsToFire = pingControl and getAdaptiveSpeed(currentPing) or repSpeed
-            local delayBetweenBatches = math.clamp(currentPing / 2500, 0.001, 0.1)
-            for repCount = 1, math.min(repsToFire, repSpeed) do
-                PlayerData.Player.muscleEvent:FireServer("rep")
-                if repCount % 500 == 0 then
-                    task.wait(0)
-                end
-            end
-            task.wait(delayBetweenBatches)
+        if StrengthTab.timerStarted and getElapsed(StrengthTab) >= StrengthTab.nextAverageElapsed then
+            StrengthTab.updateAverage()
+            StrengthTab.nextAverageElapsed = getElapsed(StrengthTab) + 10
         end
-    end)
-end
 
-Tabs.FastFarming:AddSwitch("💪 Fast Rep", function(isEnabled)
-    farmRunning = isEnabled
-    if farmRunning then
-        runFastRep = true
-        startAutoRep()
-    else 
-        runFastRep = false
-        if autoRepThread then
-            task.cancel(autoRepThread)
-            autoRepThread = nil
-        end
+        task.wait(0.1)
     end
 end)
 
@@ -2843,9 +3014,7 @@ task.spawn(function()
     end
 end)
 
-Tabs.Boss:AddLabel("---------------------")
-
-Tabs.Boss:AddSwitch("💢 Auto Kill Boss", function(state)
+Tabs.Boss.AutoKillToggle = Tabs.Boss:AddSwitch("💢 Auto Kill Boss", function(state)
     Boss.FarmActive = state
     if state then
         Boss.update()
@@ -2856,56 +3025,288 @@ Tabs.Boss:AddSwitch("💢 Auto Kill Boss", function(state)
     end
 end)
 
-Tabs.Boss:AddSwitch("🎁 Auto Collect Chest", function(state)
-    Boss.AutoCollectChest = state
-    if not state then return end
+Tabs.Boss:AddLabel("")
+Tabs.Boss:AddLabel("🎃 Halloween Boss Farming").TextSize = 19
 
-    task.spawn(function()
-        while Boss.AutoCollectChest do
-            pcall(function()
-                if not Boss.CurrentBoss then
-                    local chestFolder = Services.Workspace:FindFirstChild("BossChest")
-                    if chestFolder then
-                        local prompt = chestFolder:FindFirstChild("bossChestPrompt", true)
-                        local chestPart
+Tabs.Boss.Halloween = {
+	runtime = {},
+	BossLabelPrefix = "Halloween Boss: ",
+	StatusLabel = Tabs.Boss:AddLabel("Status: Waiting for Halloween Boss"),
+	BossLabel = Tabs.Boss:AddLabel("Halloween Boss: None"),
+	HealthLabel = Tabs.Boss:AddLabel("Health: 0 / 0"),
+	NextBossLabel = Tabs.Boss:AddLabel("Next Halloween Boss: Waiting for spawn"),
+	Data = {
+		Running = false,
+		Generation = 0,
+		Phase = "Waiting",
+		PunchInterval = 0.01,
+		LastPunch = 0,
+		AttackSequence = nil,
+		EvadeUntil = 0,
+		EvadeDistance = 230,
+		PunchBehindDistance = 45,
+		StompHealthThreshold = 0.35,
+		DodgeStomps = false,
+		Bosses = {
+			GrimReaper = "Grim Reaper",
+			FrankenBrute = "Frankenbrute",
+			PumpkinTitan = "Pumpkin Titan",
+			ScarecrowColossus = "Scarecrow Colossus"
+		},
+		BossOrder = {"GrimReaper", "FrankenBrute", "PumpkinTitan", "ScarecrowColossus"},
+		BossByDisplayName = {},
+		SelectedBosses = {},
+		Target = nil
+	}
+}
 
-                        if prompt and prompt:IsA("ProximityPrompt") then
-                            if prompt.Parent and prompt.Parent:IsA("BasePart") then
-                                chestPart = prompt.Parent
-                            end
-                        end
+Tabs.Boss.Halloween.getBossDisplayName = function(model)
+	return Tabs.Boss.Halloween.Data.Bosses[model:GetAttribute("BossId") or model.Name] or model.Name
+end
 
-                        if not chestPart then
-                            local root = chestFolder:FindFirstChild("Root", true)
-                            if root and root:IsA("BasePart") then
-                                chestPart = root
-                            end
-                        end
+Tabs.Boss.Halloween.getBossHealth = function(health, model)
+	return tonumber(model:GetAttribute("Health")) or 0
+end
 
-                        local char = PlayerData.Player.Character
-                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+Tabs.Boss.Halloween.getBossMaxHealth = function(maxHealth, model)
+	return tonumber(model:GetAttribute("MaxHealth")) or 0
+end
 
-                        if chestPart and hrp then
-                            hrp.CFrame = CFrame.new(
-                                chestPart.Position + chestPart.CFrame.RightVector * 3 + Vector3.new(0, 1, 0),
-                                chestPart.Position
-                            )
-                            task.wait(0.15)
+Tabs.Boss.Halloween.SelectedBossesLabel = Tabs.Boss:AddLabel("Targeted Halloween Bosses: All")
+Tabs.Boss.Halloween.updateSelectedBossesLabel = function(selectedNames)
+	selectedNames = {}
+	for _, bossId in ipairs(Tabs.Boss.Halloween.Data.BossOrder) do
+		if Tabs.Boss.Halloween.Data.SelectedBosses[bossId] then
+			table.insert(selectedNames, Tabs.Boss.Halloween.Data.Bosses[bossId])
+		end
+	end
+	Tabs.Boss.Halloween.SelectedBossesLabel.Text = "Targeted Halloween Bosses: "
+		.. (#selectedNames > 0 and table.concat(selectedNames, ", ") or "None")
+end
 
-                            if Boss.AutoCollectChest and not Boss.CurrentBoss then
-                                Services.VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                                task.wait(0.5)
-                                Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                            end
-                        end
-                    end
-                end
-            end)
-            task.wait(0.2)
-        end
+Tabs.Boss.Halloween.BossDropdown = Tabs.Boss:AddDropdown("Target specific Halloween Bosses", function(displayName)
+	local bossId = Tabs.Boss.Halloween.Data.BossByDisplayName[displayName]
+	if not bossId then return end
+	Tabs.Boss.Halloween.Data.SelectedBosses[bossId] = not Tabs.Boss.Halloween.Data.SelectedBosses[bossId]
+	Tabs.Boss.Halloween.updateSelectedBossesLabel()
+end)
+for _, bossId in ipairs(Tabs.Boss.Halloween.Data.BossOrder) do
+	Tabs.Boss.Halloween.Data.BossByDisplayName[Tabs.Boss.Halloween.Data.Bosses[bossId]] = bossId
+	Tabs.Boss.Halloween.Data.SelectedBosses[bossId] = true
+	Tabs.Boss.Halloween.BossDropdown:Add(Tabs.Boss.Halloween.Data.Bosses[bossId])
+end
+Tabs.Boss.Halloween.updateSelectedBossesLabel()
 
-        Services.VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-    end)
+Tabs.Boss.Halloween.shouldFarmBoss = function(model)
+	return Tabs.Boss.Halloween.Data.SelectedBosses[model:GetAttribute("BossId") or model.Name] == true
+end
+
+Tabs.Boss.Halloween.findActiveBoss = function(selectedOnly)
+	local character = PlayerData.Player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local bestModel, bestHitbox, closestDistance = nil, nil, math.huge
+	local CollectionService = game:GetService("CollectionService")
+
+	for _, candidate in ipairs(CollectionService:GetTagged("HalloweenBoss")) do
+		if candidate:IsA("Model") and candidate:IsDescendantOf(workspace)
+			and Tabs.Boss.Halloween.getBossHealth(nil, candidate) > 0
+			and (not selectedOnly or Tabs.Boss.Halloween.shouldFarmBoss(candidate)) then
+			local candidateHitbox = candidate:FindFirstChild("BossDamageHitbox", true)
+				or candidate.PrimaryPart or candidate:FindFirstChild("HumanoidRootPart")
+			if candidateHitbox and candidateHitbox:IsA("BasePart") then
+				if selectedOnly and candidate == Tabs.Boss.Halloween.Data.Target then
+					return candidate, candidateHitbox
+				end
+				local distance = root and (root.Position - candidateHitbox.Position).Magnitude or 0
+				if not bestModel or distance < closestDistance then
+					bestModel, bestHitbox, closestDistance = candidate, candidateHitbox, distance
+				end
+			end
+		end
+	end
+	return bestModel, bestHitbox
+end
+
+task.spawn(function()
+	while true do
+		local model = Tabs.Boss.Halloween.Data.Target
+		if not model or not model.Parent or Tabs.Boss.Halloween.getBossHealth(nil, model) <= 0 then
+			model = Tabs.Boss.Halloween.findActiveBoss()
+		end
+		if model then
+			Tabs.Boss.Halloween.BossLabel.Text = "Halloween Boss: " .. Tabs.Boss.Halloween.getBossDisplayName(model)
+			Tabs.Boss.Halloween.HealthLabel.Text = "Health: " .. formatNumber(Tabs.Boss.Halloween.getBossHealth(nil, model))
+				.. " / " .. formatNumber(Tabs.Boss.Halloween.getBossMaxHealth(nil, model))
+			Tabs.Boss.Halloween.NextBossLabel.Text = "Next Halloween Boss: Current boss active"
+		else
+			Tabs.Boss.Halloween.BossLabel.Text = "Halloween Boss: None"
+			Tabs.Boss.Halloween.HealthLabel.Text = "Health: 0 / 0"
+			Tabs.Boss.Halloween.NextBossLabel.Text = "Next Halloween Boss: Waiting for spawn"
+		end
+		task.wait(0.25)
+	end
+end)
+
+Tabs.Boss.Halloween.getBossHeadPosition = function(model, hitbox)
+	local head = model:FindFirstChild("Head", true) or model:FindFirstChild("head", true)
+	if head and head:IsA("BasePart") then return head.Position end
+	if head and head:IsA("Bone") then return head.WorldPosition end
+	return hitbox.Position + Vector3.new(0, hitbox.Size.Y * 0.35, 0)
+end
+
+Tabs.Boss.Halloween.evadeAttack = function(boss, model, hitbox, root, humanoid)
+	local sequence = model:GetAttribute("BossAttackSequence")
+	local attackKind = model:GetAttribute("BossAttackKind")
+	local attackCFrame = model:GetAttribute("BossAttackCFrame")
+	local impactTime = model:GetAttribute("BossAttackImpactTime")
+
+	if typeof(sequence) == "number" and sequence ~= boss.Data.AttackSequence then
+		boss.Data.AttackSequence = sequence
+		if typeof(attackKind) == "string" and typeof(attackCFrame) == "CFrame" and typeof(impactTime) == "number" then
+			boss.Data.EvadeUntil = impactTime + 0.6
+		end
+	end
+
+	if typeof(attackCFrame) ~= "CFrame" or workspace:GetServerTimeNow() > boss.Data.EvadeUntil then
+		return
+	end
+
+	attackKind = string.lower(tostring(attackKind or ""))
+	
+	if string.find(attackKind, "punch", 1, true) then
+		local center = Tabs.Boss.Halloween.getBossHeadPosition(model, hitbox)
+		local direction = Vector3.new(attackCFrame.LookVector.X, 0, attackCFrame.LookVector.Z)
+		if direction.Magnitude < 1 then direction = Vector3.new(hitbox.CFrame.LookVector.X, 0, hitbox.CFrame.LookVector.Z) end
+		if direction.Magnitude < 1 then direction = Vector3.new(0, 0, 1) end
+		local safePosition = center - direction.Unit * boss.Data.PunchBehindDistance
+		root.CFrame = CFrame.lookAt(safePosition, center)
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		boss.StatusLabel.Text = "Status: Dodging Punch"
+		return "Punch"
+	end
+
+	if not string.find(attackKind, "stomp", 1, true) then return end
+	if humanoid.Health / math.max(humanoid.MaxHealth, 1) <= boss.Data.StompHealthThreshold then
+		boss.Data.DodgeStomps = true
+	end
+	if not boss.Data.DodgeStomps then return end
+
+	local direction = Vector3.new(root.Position.X - attackCFrame.Position.X, 0, root.Position.Z - attackCFrame.Position.Z)
+	if direction.Magnitude < 1 then
+		direction = Vector3.new(-attackCFrame.LookVector.X, 0, -attackCFrame.LookVector.Z)
+	end
+	if direction.Magnitude < 1 then direction = Vector3.new(1, 0, 0) end
+	direction = direction.Unit
+	local safePosition = attackCFrame.Position + direction * boss.Data.EvadeDistance + Vector3.new(0, 18, 0)
+	root.CFrame = CFrame.lookAt(safePosition, attackCFrame.Position)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+	boss.StatusLabel.Text = "Status: Dodging Stomp"
+	return "Stomp"
+end
+
+Tabs.Boss.Halloween.attack = function(target)
+	if not target or not target.Parent then return end
+	local char = PlayerData.Player.Character
+	if not char then return end
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local hitbox = target:FindFirstChild("BossDamageHitbox", true)
+		or target.PrimaryPart or target:FindFirstChild("HumanoidRootPart")
+	if not hitbox or not hitbox:IsA("BasePart") then return end
+
+	local evadeMode = Tabs.Boss.Halloween.evadeAttack(Tabs.Boss.Halloween, target, hitbox, root, humanoid)
+	if evadeMode == "Stomp" then return end 
+
+	local punch = char:FindFirstChild("Punch") or PlayerData.Player.Backpack:FindFirstChild("Punch")
+	if punch and punch.Parent ~= char then humanoid:EquipTool(punch) end
+	
+	if evadeMode ~= "Punch" then
+		local center = Tabs.Boss.Halloween.getBossHeadPosition(target, hitbox)
+		root.CFrame = CFrame.lookAt(center, center + hitbox.CFrame.LookVector)
+	end
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+
+	local leftHand = char:FindFirstChild("LeftHand")
+	local rightHand = char:FindFirstChild("RightHand")
+
+	pcall(function()
+		if leftHand then
+			firetouchinterest(hitbox, leftHand, 0)
+			firetouchinterest(hitbox, leftHand, 1)
+		end
+		if rightHand then
+			firetouchinterest(hitbox, rightHand, 0)
+			firetouchinterest(hitbox, rightHand, 1)
+		end
+	end)
+
+	if os.clock() - Tabs.Boss.Halloween.Data.LastPunch >= Tabs.Boss.Halloween.Data.PunchInterval then
+		Tabs.Boss.Halloween.Data.LastPunch = os.clock()
+		pcall(function()
+			if punch then
+				punch.Parent = char
+				if punch:FindFirstChild("attackTime") then 
+					punch.attackTime.Value = 0 
+				end
+				punch:Activate()
+			end
+			Services.muscleEvent:FireServer("punch", "rightHand")
+			Services.muscleEvent:FireServer("punch", "leftHand")
+			Services.muscleEvent:FireServer("punch", "rightHand")
+			Services.muscleEvent:FireServer("punch", "leftHand")
+		end)
+	end
+end
+
+Tabs.Boss.Halloween.AutoFarmSwitch = Tabs.Boss:AddSwitch("🎃 Auto Kill Halloween Boss", function(state)
+	if state and Boss.FarmActive and Tabs.Boss.AutoKillToggle then
+		Tabs.Boss.AutoKillToggle:Set(false)
+	end
+	Tabs.Boss.Halloween.Data.Running = state
+	Tabs.Boss.Halloween.Data.Generation += 1
+	
+	if not state then
+		Tabs.Boss.Halloween.Data.Target = nil
+		Tabs.Boss.Halloween.Data.Phase = "Waiting"
+		Tabs.Boss.Halloween.StatusLabel.Text = "Status: Disabled"
+		return
+	end
+
+	task.spawn(function(generation)
+		while Tabs.Boss.Halloween.Data.Running and Tabs.Boss.Halloween.Data.Generation == generation do
+			pcall(function()
+				local targetModel, targetHitbox = Tabs.Boss.Halloween.findActiveBoss(true)
+				if targetModel then
+					Tabs.Boss.Halloween.Data.Target = targetModel
+					Tabs.Boss.Halloween.Data.Phase = "Fighting"
+					
+					if PlayerData.Player.Character
+						and PlayerData.Player.Character:FindFirstChildOfClass("Humanoid")
+						and PlayerData.Player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+						
+						if not string.find(Tabs.Boss.Halloween.StatusLabel.Text, "Dodging") then
+							Tabs.Boss.Halloween.StatusLabel.Text = "Status: Fighting"
+						end
+						
+						Tabs.Boss.Halloween.attack(targetModel)
+					else
+						Tabs.Boss.Halloween.StatusLabel.Text = "Status: Waiting for Respawn"
+					end
+				else
+					Tabs.Boss.Halloween.Data.Target = nil
+					Tabs.Boss.Halloween.Data.Phase = "Waiting"
+					Tabs.Boss.Halloween.StatusLabel.Text = "Status: Waiting for Halloween Boss"
+				end
+			end)
+			task.wait(Tabs.Boss.Halloween.Data.Target and 0.01 or 0.25)
+		end
+	end, Tabs.Boss.Halloween.Data.Generation)
 end)
 
 Tabs.Pets:AddLabel("💰 Auto Buy")
@@ -3589,6 +3990,28 @@ local switch = Tabs.Misc:AddSwitch("🔒 Lock Position", function(Value)
             State.posLock:Disconnect()
             State.posLock = nil
         end
+    end
+end)
+
+Tabs.Misc:AddSwitch("🎃 Auto Halloween Fortune Wheel v31", function(Value)
+    State.autoHalloweenFortuneWheelActive = Value
+    if Value then
+        task.spawn(function()
+            while State.autoHalloweenFortuneWheelActive do
+                pcall(function()
+                    local ReplicatedStorage = Services.ReplicatedStorage
+                    local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
+                    local wheelRemote = rEvents and rEvents:FindFirstChild("halloweenWheelRemote")
+                    
+                    if wheelRemote then
+                        -- Testte başarılı olan "openFortuneWheel" argümanını kullanıyoruz
+                        wheelRemote:InvokeServer("openFortuneWheel")
+                    end
+                end)
+                -- Çarkın cooldown (bekleme) süresine göre buradaki saniyeyi ayarlayabilirsin
+                task.wait(1) 
+            end
+        end)
     end
 end)
 
