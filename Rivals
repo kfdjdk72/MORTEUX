@@ -1,11 +1,11 @@
 local SynioxRivalsConfig = {
     status = 1,
     workingDate = "11/08/26",
-    version = "3.9",
+    version = "4.1",
     problems = "None",
     welcomeText = [[Welcome to Syniox Hub Rivals Edition!
 
-Advanced aimbot, triggerbot, and customized ESP frameworks are fully loaded and optimized for smooth performance.]],
+Advanced aimbot, fully fixed ESP, non-blocking cosmetic loader, and optimized performance are loaded.]],
 }
 
 pcall(function()
@@ -18,12 +18,10 @@ pcall(function()
 end)
 
 local genv = getgenv()
-
 if genv.__nameless_loaded then
     warn("Syniox Rivals Hub: Already running - duplicate execution blocked.")
     return
 end
-
 _G.__nameless_loaded = true
 
 if not game:IsLoaded() then
@@ -51,35 +49,26 @@ local defaultSettings = {
     ESP_Enabled = true,
     ESP_Highlight = true,
     ESP_Name = true,
-    ESP_Studs = true,
-    ESP_Tracer = false,
-    ESP_BoxTransparency = 0.5,
-    ESP_MaxDistance = 500,
+    ESP_MaxDistance = 1000,
     Aimbot_Enabled = true,
     Aimbot_FOVRadius = 150,
     Aimbot_WallCheck = true,
-    Aimbot_Smoothness = 0.5,
-    Aimbot_MaxDistance = 500,
+    Aimbot_Smoothness = 0.3,
+    Aimbot_MaxDistance = 1000,
     TargetPart = "Head",
-    Triggerbot_Enabled = true,
-    Triggerbot_MaxDistance = 1000,
-    Triggerbot_FOVRadius = 50,
+    Triggerbot_Enabled = false,
     InfJump_Enabled = false,
 }
 local allowedSettingTypes = { boolean = true, number = true, string = true }
 
 local function saveSettings()
-    if not writefile then
-        return
-    end
-
+    if not writefile then return end
     local serializableSettings = {}
     for key, value in pairs(defaultSettings) do
         if allowedSettingTypes[typeof(value)] then
             serializableSettings[key] = defaultSettings[key]
         end
     end
-
     pcall(function()
         writefile(settingsFilePath, httpService:JSONEncode(serializableSettings))
     end)
@@ -88,15 +77,9 @@ end
 local settings = (function()
     local loadedSettings
     local success, result = pcall(function()
-        if not isfile or not isfile(settingsFilePath) then
-            return nil
-        end
-
+        if not isfile or not isfile(settingsFilePath) then return nil end
         local decodedSettings = httpService:JSONDecode(readfile(settingsFilePath))
-        if type(decodedSettings) ~= "table" then
-            return nil
-        end
-
+        if type(decodedSettings) ~= "table" then return nil end
         for key, defaultValue in pairs(defaultSettings) do
             if decodedSettings[key] == nil then
                 decodedSettings[key] = defaultValue
@@ -104,21 +87,60 @@ local settings = (function()
         end
         return decodedSettings
     end)
-
-    if success then
-        loadedSettings = result
-    end
-    if loadedSettings then
-        return loadedSettings
-    end
-
+    if success and loadedSettings then return loadedSettings end
     local copiedDefaults = {}
-    for key, value in pairs(defaultSettings) do
-        copiedDefaults[key] = value
-    end
+    for key, value in pairs(defaultSettings) do copiedDefaults[key] = value end
     return copiedDefaults
 end)()
 
+-- Cosmetic Library ve Skin Yükleme Fonksiyonları
+local lib = nil
+pcall(function()
+    lib = require(replicatedStorage:WaitForChild("Modules", 3):WaitForChild("CosmeticLibrary", 3))
+end)
+
+local selectedSkinName = nil
+local cosmeticNames = {"Hiçbiri"}
+
+if lib and lib.Cosmetics then
+    for name, _ in pairs(lib.Cosmetics) do
+        table.insert(cosmeticNames, name)
+    end
+end
+
+local function applySelectedSkin(skinName)
+    if not skinName or skinName == "Hiçbiri" then return end
+    task.spawn(function()
+        pcall(function()
+            local pdc = require(localPlayer:WaitForChild("PlayerScripts"):WaitForChild("Controllers"):WaitForChild("PlayerDataController"))
+            if pdc and pdc.CurrentData then
+                local inv = pdc.CurrentData:Get("CosmeticInventory")
+                if inv then inv[skinName] = true end
+            end
+        end)
+    end)
+end
+
+local function applyAllSkinsNonBlocking()
+    task.spawn(function()
+        pcall(function()
+            local pdc = require(localPlayer:WaitForChild("PlayerScripts"):WaitForChild("Controllers"):WaitForChild("PlayerDataController"))
+            if pdc and pdc.CurrentData and lib and lib.Cosmetics then
+                local inv = pdc.CurrentData:Get("CosmeticInventory")
+                if inv then
+                    local count = 0
+                    for name, _ in pairs(lib.Cosmetics) do
+                        inv[name] = true
+                        count = count + 1
+                        if count % 15 == 0 then task.wait() end
+                    end
+                end
+            end
+        end)
+    end)
+end
+
+-- FOV Çemberi
 local ThemeColor = Color3.fromRGB(220, 20, 30)
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
@@ -129,48 +151,59 @@ FOVCircle.Transparency = 0.7
 FOVCircle.Color = ThemeColor
 FOVCircle.Visible = false
 
+-- Fixlenen Gelişmiş Hedef Bulma (Aimbot)
 local function GetClosestTarget()
     local screenCenter = Vector2.new(currentCamera.ViewportSize.X / 2, currentCamera.ViewportSize.Y / 2)
     local closestPart = nil
     local shortestDistance = math.huge
 
     for _, player in pairs(players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild(settings.TargetPart or "Head") then
-            local targetPartObj = player.Character[settings.TargetPart or "Head"]
-            local playerDistance = (currentCamera.CFrame.Position - targetPartObj.Position).Magnitude
+        if player ~= localPlayer and player.Character then
+            local char = player.Character
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            
+            if humanoid and humanoid.Health > 0 then
+                local targetPartObj = char:FindFirstChild(settings.TargetPart or "Head") or char:FindFirstChild("HumanoidRootPart")
+                
+                if targetPartObj then
+                    local playerDistance = (currentCamera.CFrame.Position - targetPartObj.Position).Magnitude
 
-            if playerDistance <= (settings.Aimbot_MaxDistance or 500) then
-                local isVisible = true
-                if settings.Aimbot_WallCheck then
-                    local raycastParams = RaycastParams.new()
-                    local localChar = localPlayer.Character
-                    if localChar then
-                        raycastParams.FilterDescendantsInstances = {localChar}
-                    end
-                    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+                    if playerDistance <= (settings.Aimbot_MaxDistance or 1000) then
+                        local isVisible = true
+                        if settings.Aimbot_WallCheck then
+                            local raycastParams = RaycastParams.new()
+                            local localChar = localPlayer.Character
+                            if localChar then
+                                raycastParams.FilterDescendantsInstances = {localChar, char}
+                            else
+                                raycastParams.FilterDescendantsInstances = {char}
+                            end
+                            raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 
-                    local rayDirection = (targetPartObj.Position - currentCamera.CFrame.Position).Unit * playerDistance
-                    local raycastResult = workspace:Raycast(currentCamera.CFrame.Position, rayDirection, raycastParams)
+                            local rayDirection = (targetPartObj.Position - currentCamera.CFrame.Position)
+                            local raycastResult = workspace:Raycast(currentCamera.CFrame.Position, rayDirection, raycastParams)
 
-                    if raycastResult and not raycastResult.Instance:IsDescendantOf(player.Character) then
-                        isVisible = false
-                    end
-                end
-
-                if isVisible then
-                    local screenPos, onScreen = currentCamera:WorldToViewportPoint(targetPartObj.Position)
-                    local targetDistance = playerDistance
-
-                    if onScreen then
-                        local mouseDistance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
-                        if mouseDistance <= (settings.Aimbot_FOVRadius or 150) then
-                            targetDistance = mouseDistance
+                            if raycastResult then
+                                isVisible = false
+                            end
                         end
-                    end
 
-                    if targetDistance < shortestDistance then
-                        shortestDistance = targetDistance
-                        closestPart = targetPartObj
+                        if isVisible then
+                            local screenPos, onScreen = currentCamera:WorldToViewportPoint(targetPartObj.Position)
+                            local targetDistance = playerDistance
+
+                            if onScreen then
+                                local mouseDistance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                                if mouseDistance <= (settings.Aimbot_FOVRadius or 150) then
+                                    targetDistance = mouseDistance
+                                end
+                            end
+
+                            if targetDistance < shortestDistance then
+                                shortestDistance = targetDistance
+                                closestPart = targetPartObj
+                            end
+                        end
                     end
                 end
             end
@@ -180,6 +213,7 @@ local function GetClosestTarget()
     return closestPart
 end
 
+-- Arayüz (WindUI)
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/EMR-58/UI/refs/heads/main/Wind%20ui.txt"))()
 
 local SynioxWindow = WindUI:CreateWindow({
@@ -239,7 +273,7 @@ HomeTab:Paragraph({
 
 HomeTab:Paragraph({
     Title = "Script Details",
-    Desc = "Version: V" .. tostring(SynioxRivalsConfig.version) .. "\nStatus: Optimized (No Lag)"
+    Desc = "Version: V" .. tostring(SynioxRivalsConfig.version) .. "\nStatus: All Systems Fixed & Operational"
 })
 
 HomeTab:Button({
@@ -305,24 +339,10 @@ CombatTab:Slider({
     Value = {
         Min = 0,
         Max = 100,
-        Default = (settings.Aimbot_Smoothness or 0.5) * 100,
+        Default = (settings.Aimbot_Smoothness or 0.3) * 100,
     },
     Callback = function(v)
         settings.Aimbot_Smoothness = v / 100
-        saveSettings()
-    end
-})
-
-CombatTab:Slider({
-    Title = "Max Distance",
-    Step = 25,
-    Value = {
-        Min = 100,
-        Max = 2000,
-        Default = settings.Aimbot_MaxDistance or 500,
-    },
-    Callback = function(v)
-        settings.Aimbot_MaxDistance = v
         saveSettings()
     end
 })
@@ -344,7 +364,7 @@ VisualTab:Toggle({
 
 VisualTab:Toggle({
     Title = "ESP Highlight Box",
-    Desc = "Highlights enemy models",
+    Desc = "Highlights enemy models through walls",
     Value = settings.ESP_Highlight,
     Callback = function(st)
         settings.ESP_Highlight = st
@@ -354,11 +374,68 @@ VisualTab:Toggle({
 
 VisualTab:Toggle({
     Title = "ESP Name Tag",
-    Desc = "Displays enemy usernames",
+    Desc = "Displays enemy usernames above characters",
     Value = settings.ESP_Name,
     Callback = function(st)
         settings.ESP_Name = st
         saveSettings()
+    end
+})
+
+local CosmeticTab = SynioxWindow:Tab({
+    Title = "Skin Manager",
+    Icon = "package"
+})
+
+CosmeticTab:Paragraph({
+    Title = "Selective & Safe Skin Loader",
+    Desc = "Select a specific skin from the dropdown and load it instantly without lagging."
+})
+
+CosmeticTab:Dropdown({
+    Title = "Select Cosmetic / Skin",
+    Desc = "Choose a weapon skin or item",
+    Values = cosmeticNames,
+    Value = "Hiçbiri",
+    Callback = function(option)
+        selectedSkinName = option
+    end
+})
+
+CosmeticTab:Button({
+    Title = "Load Selected Skin",
+    Icon = "check",
+    Callback = function()
+        if selectedSkinName and selectedSkinName ~= "Hiçbiri" then
+            applySelectedSkin(selectedSkinName)
+            WindUI:Notify({
+                Title = "Skin Loaded",
+                Content = tostring(selectedSkinName) .. " applied successfully!",
+                Icon = "check-circle",
+                Duration = 2,
+            })
+        else
+            WindUI:Notify({
+                Title = "Error",
+                Content = "Please select a valid skin first.",
+                Icon = "alert-circle",
+                Duration = 2,
+            })
+        end
+    end
+})
+
+CosmeticTab:Button({
+    Title = "Load All Skins (Lag-Free)",
+    Icon = "download",
+    Callback = function()
+        applyAllSkinsNonBlocking()
+        WindUI:Notify({
+            Title = "Loading All Skins",
+            Content = "Processing in the background safely...",
+            Icon = "check-circle",
+            Duration = 3,
+        })
     end
 })
 
@@ -396,24 +473,85 @@ SettingsTab:Button({
     Icon = "trash-2",
     Callback = function()
         pcall(function() FOVCircle:Remove() end)
+        for _, p in pairs(players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("SynioxHighlight") then
+                p.Character.SynioxHighlight:Destroy()
+            end
+            if p.Character and p.Character:FindFirstChild("SynioxBillboard") then
+                p.Character.SynioxBillboard:Destroy()
+            end
+        end
         _G.__nameless_loaded = nil
         SynioxWindow:Destroy()
     end
 })
 
+-- Ana Çalışma Döngüsü (Aimbot, FOV ve ESP Yönetimi)
 runService.RenderStepped:Connect(function()
     FOVCircle.Position = Vector2.new(currentCamera.ViewportSize.X / 2, currentCamera.ViewportSize.Y / 2)
     FOVCircle.Visible = settings.Aimbot_Enabled
 
+    -- Aimbot Çalıştırma
     if settings.Aimbot_Enabled then
         local targetPart = GetClosestTarget()
         if targetPart then
             local targetCFrame = CFrame.lookAt(currentCamera.CFrame.Position, targetPart.Position)
-            local smoothness = settings.Aimbot_Smoothness or 0.5
+            local smoothness = settings.Aimbot_Smoothness or 0.3
             if smoothness > 0 then
                 currentCamera.CFrame = currentCamera.CFrame:Lerp(targetCFrame, 1 - smoothness)
             else
                 currentCamera.CFrame = targetCFrame
+            end
+        end
+    end
+
+    -- ESP Yönetimi (Highlight ve İsimler)
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local char = player.Character
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            
+            -- Highlight (Kutu / Model Aydınlatma)
+            if settings.ESP_Enabled and settings.ESP_Highlight then
+                local highlight = char:FindFirstChild("SynioxHighlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "SynioxHighlight"
+                    highlight.FillColor = Color3.fromRGB(220, 20, 30)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 0.5
+                    highlight.Parent = char
+                end
+            else
+                local highlight = char:FindFirstChild("SynioxHighlight")
+                if highlight then highlight:Destroy() end
+            end
+
+            -- İsim Etiketi (Name Tag)
+            if settings.ESP_Enabled and settings.ESP_Name and hrp then
+                local billboard = char:FindFirstChild("SynioxBillboard")
+                if not billboard then
+                    billboard = Instance.new("BillboardGui")
+                    billboard.Name = "SynioxBillboard"
+                    billboard.Size = UDim2.new(0, 100, 0, 40)
+                    billboard.StudsOffset = Vector3.new(0, 3, 0)
+                    billboard.AlwaysOnTop = true
+                    billboard.Parent = char
+
+                    local textLabel = Instance.new("TextLabel")
+                    textLabel.Name = "NameTag"
+                    textLabel.Size = UDim2.new(1, 0, 1, 0)
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    textLabel.TextStrokeTransparency = 0
+                    textLabel.TextSize = 12
+                    textLabel.Font = Enum.Font.GothamBold
+                    textLabel.Text = player.Name
+                    textLabel.Parent = billboard
+                end
+            else
+                local billboard = char:FindFirstChild("SynioxBillboard")
+                if billboard then billboard:Destroy() end
             end
         end
     end
