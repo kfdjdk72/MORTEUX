@@ -1,5 +1,3 @@
--- HEllO
-
 local SynioxRivalsConfig = {
     status = 1,
     workingDate = "11/08/26",
@@ -134,7 +132,6 @@ end
 settings.ESP_Snapline = nil
 settings.Triggerbot_MaxDistance = 1000
 
--- Aimbot FOV Circle Drawing
 local ThemeColor = Color3.fromRGB(220, 20, 30)
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
@@ -658,4 +655,53 @@ MovementTab:Toggle({
     Desc = "Allows continuous mid-air jumping",
     Value = settings.InfJump_Enabled,
     Callback = function(st)
-        settings
+        settings.InfJump_Enabled = st
+        saveSettings()
+    end
+})
+
+userInputService.JumpRequest:Connect(function()
+    if settings.InfJump_Enabled and localPlayer.Character then
+        local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+local SettingsTab = SynioxWindow:Tab({
+    Title = "Settings",
+    Icon = "settings"
+})
+
+SettingsTab:Button({
+    Title = "Unload Hub",
+    Icon = "trash-2",
+    Callback = function()
+        alive = false
+        pcall(function() FOVCircle:Remove() end)
+        if genv.RivalsCosmeticsCleanup then
+            pcall(getgenv().RivalsCosmeticsCleanup)
+        end
+        _G.__nameless_loaded = nil
+        SynioxWindow:Destroy()
+    end
+})
+
+runService.RenderStepped:Connect(function()
+    FOVCircle.Position = Vector2.new(currentCamera.ViewportSize.X / 2, currentCamera.ViewportSize.Y / 2)
+    FOVCircle.Visible = settings.Aimbot_Enabled
+
+    if settings.Aimbot_Enabled then
+        local targetPart = GetClosestTarget()
+        if targetPart then
+            local targetCFrame = CFrame.lookAt(currentCamera.CFrame.Position, targetPart.Position)
+            local smoothness = settings.Aimbot_Smoothness or 0.5
+            if smoothness > 0 then
+                currentCamera.CFrame = currentCamera.CFrame:Lerp(targetCFrame, 1 - smoothness)
+            else
+                currentCamera.CFrame = targetCFrame
+            end
+        end
+    end
+end)
