@@ -1,7 +1,7 @@
 local SynioxRivalsConfig = {
     status = 1,
     workingDate = "11/08/26",
-    version = "3.7",
+    version = "3.8",
     problems = "None",
     welcomeText = [[Welcome to Syniox Hub Rivals Edition!
 
@@ -245,11 +245,16 @@ local oldVmGet = vmClass and rawget(vmClass, "Get") or function() end
 
 if lib and pdc then
     local function get(key)
+        if not pdc or not pdc.CurrentData or type(pdc.CurrentData.Get) ~= "function" then
+            return nil
+        end
         local ok, v = pcall(pdc.CurrentData.Get, pdc.CurrentData, key)
         return ok and v or nil
     end
 
-    waitFor(function() return get("CosmeticInventory") and get("WeaponInventory") end)
+    pcall(function()
+        waitFor(function() return get("CosmeticInventory") and get("WeaponInventory") end)
+    end)
 
     local function flush()
         pcall(function()
@@ -271,10 +276,12 @@ if lib and pdc then
     end
 
     local inv = get("CosmeticInventory")
-    for name in pairs(lib.Cosmetics) do
-        if inv and inv[name] == nil then
-            inv[name] = true
-            added[name] = true
+    if inv and lib.Cosmetics then
+        for name in pairs(lib.Cosmetics) do
+            if inv[name] == nil then
+                inv[name] = true
+                added[name] = true
+            end
         end
     end
 
@@ -285,7 +292,7 @@ if lib and pdc then
     end)
 
     local function baseOf(name)
-        local cosmetic = lib.Cosmetics[name]
+        local cosmetic = lib.Cosmetics and lib.Cosmetics[name]
         if cosmetic and cosmetic.Type == "Skin" and cosmetic.ItemName then
             return cosmetic.ItemName
         end
