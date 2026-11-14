@@ -1,11 +1,11 @@
 local SynioxRivalsConfig = {
     status = 1,
     workingDate = "11/08/26",
-    version = "3.8",
+    version = "3.9",
     problems = "None",
     welcomeText = [[Welcome to Syniox Hub Rivals Edition!
 
-Advanced aimbot, triggerbot, customized ESP frameworks, and full cosmetic skin/wrap unlockers are fully loaded and optimized.]],
+Advanced aimbot, triggerbot, and customized ESP frameworks are fully loaded and optimized for smooth performance.]],
 }
 
 pcall(function()
@@ -26,20 +26,14 @@ end
 
 _G.__nameless_loaded = true
 
-if genv.RivalsCosmeticsCleanup then
-    pcall(getgenv().RivalsCosmeticsCleanup)
-end
-
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-local virtualInputManager = game:GetService("VirtualInputManager")
 local players = game:GetService("Players")
 local runService = game:GetService("RunService")
 local userInputService = game:GetService("UserInputService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local tweenService = game:GetService("TweenService")
 local httpService = game:GetService("HttpService")
 local currentCamera = workspace.CurrentCamera
 local localPlayer = players.LocalPlayer
@@ -71,7 +65,6 @@ local defaultSettings = {
     Triggerbot_MaxDistance = 1000,
     Triggerbot_FOVRadius = 50,
     InfJump_Enabled = false,
-    DeviceSpoofer_Active = nil,
 }
 local allowedSettingTypes = { boolean = true, number = true, string = true }
 
@@ -125,12 +118,6 @@ local settings = (function()
     end
     return copiedDefaults
 end)()
-
-if settings.ESP_Tracer == nil then
-    settings.ESP_Tracer = settings.ESP_Snapline or false
-end
-settings.ESP_Snapline = nil
-settings.Triggerbot_MaxDistance = 1000
 
 local ThemeColor = Color3.fromRGB(220, 20, 30)
 local FOVCircle = Drawing.new("Circle")
@@ -193,227 +180,6 @@ local function GetClosestTarget()
     return closestPart
 end
 
-local setControlsRemote = nil
-pcall(function()
-    local remotes = replicatedStorage:WaitForChild("Remotes", 5)
-    if not remotes then
-        return
-    end
-    local replication = remotes:WaitForChild("Replication", 5)
-    if not replication then
-        return
-    end
-    local fighter = replication:WaitForChild("Fighter", 5)
-    if not fighter then
-        return
-    end
-    setControlsRemote = fighter:WaitForChild("SetControls", 5)
-end)
-
-local function waitFor(getter)
-    local deadline = os.clock() + 90
-    while os.clock() < deadline do
-        local ok, value = pcall(getter)
-        if ok and value then
-            return value
-        end
-        task.wait(0.5)
-    end
-end
-
-local ps = localPlayer:WaitForChild("PlayerScripts")
-local lib = waitFor(function() return require(replicatedStorage.Modules.CosmeticLibrary) end)
-local replicated = waitFor(function() return require(replicatedStorage.Modules.ReplicatedClass) end)
-local vmClass = waitFor(function() return require(ps.Modules.ClientReplicatedClasses.ClientFighter.ClientItem.ClientViewModel) end)
-local pdc = waitFor(function() return require(ps.Controllers.PlayerDataController) end)
-local viewModels = waitFor(function() return ps.Assets.ViewModels end)
-local classes = waitFor(function() return ps.Modules.ViewModels end)
-local equipRemote = waitFor(function() return replicatedStorage.Remotes.Data.EquipCosmetic end)
-
-local cosmeticsFolder = "Syniox_Rivals_Cosmetics"
-local cosmeticsFile = cosmeticsFolder .. "/Config.json"
-local slots = { Skin = true, Wrap = true, Charm = true, Finisher = true }
-local added = {}
-local saved = {}
-local alive = true
-local swaps = {}
-local swapping = {}
-local moduleCache = {}
-local modelCache = {}
-local oldGet = replicated and replicated.Get or function() end
-local oldVmGet = vmClass and rawget(vmClass, "Get") or function() end
-
-if lib and pdc then
-    local function get(key)
-        if not pdc or not pdc.CurrentData or type(pdc.CurrentData.Get) ~= "function" then
-            return nil
-        end
-        local ok, v = pcall(pdc.CurrentData.Get, pdc.CurrentData, key)
-        return ok and v or nil
-    end
-
-    pcall(function()
-        waitFor(function() return get("CosmeticInventory") and get("WeaponInventory") end)
-    end)
-
-    local function flush()
-        pcall(function()
-            if not isfolder(cosmeticsFolder) then
-                makefolder(cosmeticsFolder)
-            end
-            writefile(cosmeticsFile, httpService:JSONEncode(saved))
-        end)
-    end
-
-    local function find(weapon)
-        local list = get("WeaponInventory")
-        if not list then return end
-        for _, w in pairs(list) do
-            if w.Name == weapon then
-                return w
-            end
-        end
-    end
-
-    local inv = get("CosmeticInventory")
-    if inv and lib.Cosmetics then
-        for name in pairs(lib.Cosmetics) do
-            if inv[name] == nil then
-                inv[name] = true
-                added[name] = true
-            end
-        end
-    end
-
-    pcall(function()
-        if isfile(cosmeticsFile) then
-            saved = httpService:JSONDecode(readfile(cosmeticsFile))
-        end
-    end)
-
-    local function baseOf(name)
-        local cosmetic = lib.Cosmetics and lib.Cosmetics[name]
-        if cosmetic and cosmetic.Type == "Skin" and cosmetic.ItemName then
-            return cosmetic.ItemName
-        end
-        return name
-    end
-
-    local function moduleOf(name)
-        local cached = moduleCache[name]
-        if cached == nil then
-            local found = classes:FindFirstChild(name, true)
-            cached = found and found:IsA("ModuleScript") and found or false
-            moduleCache[name] = cached
-        end
-        return cached or nil
-    end
-
-    local function hasModel(name)
-        local cached = modelCache[name]
-        if cached == nil then
-            cached = viewModels:FindFirstChild(name, true) ~= nil
-            modelCache[name] = cached
-        end
-        return cached
-    end
-
-    local function skinClassFor(weapon, skin)
-        local defaultModule = moduleOf(weapon)
-        local skinModule = skin and moduleOf(skin.Name)
-        if not (defaultModule and skinModule and hasModel(skin.Name)) then return end
-        if skinModule.Parent ~= defaultModule.Parent and skinModule.Parent ~= defaultModule then return end
-        local loaded, skinClass = pcall(require, skinModule)
-        if loaded and type(skinClass) == "table" and type(skinClass.new) == "function" then
-            return skinClass
-        end
-    end
-
-    local function wantedSkin(weapon)
-        local picks = saved[weapon]
-        local skin = picks and picks.Skin
-        if not skin then return false end
-        if skinClassFor(weapon, skin) or (not moduleOf(skin.Name) and hasModel(skin.Name)) then
-            return skin.Name
-        end
-        return false
-    end
-
-    local function installSwap(weapon)
-        if swaps[weapon] then return end
-        local defaultModule = moduleOf(weapon)
-        if not defaultModule then return end
-        local ok, class = pcall(require, defaultModule)
-        if not ok or type(class) ~= "table" or type(class.new) ~= "function" then return end
-        local origNew = class.new
-        swaps[weapon] = { class = class, origNew = origNew, own = rawget(class, "new") ~= nil }
-        class.new = function(...)
-            local thread = coroutine.running()
-            local mine = alive and not swapping[thread]
-            local picks = mine and saved[weapon]
-            local skin = picks and picks.Skin
-            local skinClass = skin and skinClassFor(weapon, skin)
-            if skinClass then
-                swapping[thread] = { weapon = weapon, skin = skin.Name }
-                local built, object = pcall(skinClass.new, ...)
-                swapping[thread] = nil
-                if built then
-                    if type(object) == "table" then
-                        rawset(object, "_rivalsSkin", skin.Name)
-                    end
-                    return object
-                end
-            end
-            local object = origNew(...)
-            if mine and type(object) == "table" then
-                rawset(object, "_rivalsSkin", not skinClass and wantedSkin(weapon))
-            end
-            return object
-        end
-    end
-
-    for weapon, picks in pairs(saved) do
-        if picks.Skin then
-            installSwap(weapon)
-        end
-    end
-
-    if replicated then
-        replicated.Get = function(self, key)
-            if alive and slots[key] then
-                local data = rawget(self, "Data")
-                local picks = data and saved[baseOf(data.Name)]
-                local entry = picks and picks[key]
-                if entry ~= nil then
-                    return entry
-                end
-            end
-            return oldGet(self, key)
-        end
-    end
-
-    if vmClass then
-        vmClass.Get = function(self, key)
-            if alive and key == "Name" then
-                local data = rawget(self, "Data")
-                if data then
-                    local weapon = baseOf(data.Name)
-                    local active = swapping[coroutine.running()]
-                    if active and active.weapon == weapon then
-                        return active.skin
-                    end
-                    local picks = saved[weapon]
-                    local skin = picks and picks.Skin
-                    if skin and not moduleOf(skin.Name) and hasModel(skin.Name) and (data.Name == weapon or not moduleOf(data.Name)) then
-                        return skin.Name
-                    end
-                end
-            end
-            return (oldVmGet or replicated.Get)(self, key)
-        end
-    end
-end
-
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/EMR-58/UI/refs/heads/main/Wind%20ui.txt"))()
 
 local SynioxWindow = WindUI:CreateWindow({
@@ -461,22 +227,6 @@ local SynioxWindow = WindUI:CreateWindow({
     },
 })
 
-if SynioxRivalsConfig.status == 0 then
-    WindUI:Notify({
-        Title = "Status: Offline",
-        Content = "This script is currently out of date.",
-        Icon = "alert-triangle",
-        Duration = 8,
-    })
-elseif SynioxRivalsConfig.status == 2 then
-    WindUI:Notify({
-        Title = "Status: Unstable",
-        Content = "Some features may require caution.",
-        Icon = "alert-circle",
-        Duration = 6,
-    })
-end
-
 local HomeTab = SynioxWindow:Tab({
     Title = "Home",
     Icon = "house"
@@ -489,7 +239,7 @@ HomeTab:Paragraph({
 
 HomeTab:Paragraph({
     Title = "Script Details",
-    Desc = "Version: V" .. tostring(SynioxRivalsConfig.version) .. "\nStatus: " .. tostring(SynioxRivalsConfig.problems)
+    Desc = "Version: V" .. tostring(SynioxRivalsConfig.version) .. "\nStatus: Optimized (No Lag)"
 })
 
 HomeTab:Button({
@@ -577,16 +327,6 @@ CombatTab:Slider({
     end
 })
 
-CombatTab:Toggle({
-    Title = "Triggerbot Enabled",
-    Desc = "Automatically fires when an enemy crosses your crosshair",
-    Value = settings.Triggerbot_Enabled,
-    Callback = function(st)
-        settings.Triggerbot_Enabled = st
-        saveSettings()
-    end
-})
-
 local VisualTab = SynioxWindow:Tab({
     Title = "Visuals",
     Icon = "eye"
@@ -622,36 +362,6 @@ VisualTab:Toggle({
     end
 })
 
-VisualTab:Toggle({
-    Title = "ESP Distance (Studs)",
-    Desc = "Shows distance from targets",
-    Value = settings.ESP_Studs,
-    Callback = function(st)
-        settings.ESP_Studs = st
-        saveSettings()
-    end
-})
-
-VisualTab:Toggle({
-    Title = "ESP Tracers",
-    Desc = "Draws lines connecting to targets",
-    Value = settings.ESP_Tracer,
-    Callback = function(st)
-        settings.ESP_Tracer = st
-        saveSettings()
-    end
-})
-
-local CosmeticTab = SynioxWindow:Tab({
-    Title = "Cosmetics",
-    Icon = "package"
-})
-
-CosmeticTab:Paragraph({
-    Title = "Cosmetic Unlocker Status",
-    Desc = "All weapon skins, wraps, and charms have been unlocked via inventory patcher."
-})
-
 local MovementTab = SynioxWindow:Tab({
     Title = "Movement",
     Icon = "activity"
@@ -685,11 +395,7 @@ SettingsTab:Button({
     Title = "Unload Hub",
     Icon = "trash-2",
     Callback = function()
-        alive = false
         pcall(function() FOVCircle:Remove() end)
-        if genv.RivalsCosmeticsCleanup then
-            pcall(getgenv().RivalsCosmeticsCleanup)
-        end
         _G.__nameless_loaded = nil
         SynioxWindow:Destroy()
     end
