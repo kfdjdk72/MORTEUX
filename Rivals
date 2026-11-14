@@ -8,12 +8,11 @@ local SynioxRivalsConfig = {
 Advanced aimbot, triggerbot, customized ESP frameworks, and full cosmetic skin/wrap unlockers are fully loaded and optimized.]],
 }
 
--- Sunucu değişimlerinde (teleport) scriptin otomatik olarak yeniden yüklenmesini sağlar
 pcall(function()
     if queue_on_teleport then
         queue_on_teleport([[
             task.wait(2)
-            loadstring(game:HttpGet("BURAYA_SCRIPTIN_LINKINI_YAZABİLİRSİN VEYA DIRECT EXECUTOR KULLANABİLİRSİN"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/kfdjdk72/MORTEUX/refs/heads/main/Rivals"))()
         ]])
     end
 end)
