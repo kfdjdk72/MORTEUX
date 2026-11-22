@@ -1,0 +1,117 @@
+local TweenService = game:GetService("TweenService")
+local Stats = game:GetService("Stats")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+
+if PlayerGui:FindFirstChild("Syniox_GUI") then PlayerGui.Syniox_GUI:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "Syniox_GUI"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 190, 0, 210)
+MainFrame.Position = UDim2.new(-0.3, 0, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Color = Color3.fromRGB(160, 0, 0)
+Stroke.Thickness = 2
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, -40, 0, 40)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "SYNIOX | AFK"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
+
+local ToggleBtn = Instance.new("TextButton", MainFrame)
+ToggleBtn.Size = UDim2.new(0, 25, 0, 25)
+ToggleBtn.Position = UDim2.new(1, -35, 0, 7)
+ToggleBtn.Text = "-"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
+
+local StatContainer = Instance.new("Frame", MainFrame)
+StatContainer.Size = UDim2.new(1, -20, 0, 90)
+StatContainer.Position = UDim2.new(0, 10, 0, 40)
+StatContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Instance.new("UICorner", StatContainer).CornerRadius = UDim.new(0, 6)
+
+local function CreateTxt(text, pos)
+    local lbl = Instance.new("TextLabel", StatContainer)
+    lbl.Size = UDim2.new(1, 0, 0, 30)
+    lbl.Position = pos
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextSize = 13
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.BackgroundTransparency = 1
+    return lbl
+end
+
+local TxtTime = CreateTxt("  ⏳ 00:00:00", UDim2.new(0,0,0,0))
+local TxtFPS  = CreateTxt("  🚀 FPS: --", UDim2.new(0,0,0,30))
+local TxtMS   = CreateTxt("  📡 MS: --", UDim2.new(0,0,0,60))
+
+local BoostBtn = Instance.new("TextButton", MainFrame)
+BoostBtn.Size = UDim2.new(0, 170, 0, 40)
+BoostBtn.Position = UDim2.new(0.5, -85, 0, 150)
+BoostBtn.BackgroundColor3 = Color3.fromRGB(160, 0, 0)
+BoostBtn.Text = "FPS BOOST"
+BoostBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BoostBtn.Font = Enum.Font.GothamBold
+BoostBtn.TextSize = 14
+Instance.new("UICorner", BoostBtn).CornerRadius = UDim.new(0, 6)
+
+local isMinimized = false
+ToggleBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    local targetSize = isMinimized and UDim2.new(0, 190, 0, 40) or UDim2.new(0, 190, 0, 210)
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetSize}):Play()
+    
+    StatContainer.Visible = not isMinimized
+    BoostBtn.Visible = not isMinimized
+    ToggleBtn.Text = isMinimized and "+" or "-"
+end)
+
+BoostBtn.MouseButton1Down:Connect(function()
+    TweenService:Create(BoostBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine), {Size = UDim2.new(0, 160, 0, 38)}):Play()
+end)
+
+BoostBtn.MouseButton1Up:Connect(function()
+    TweenService:Create(BoostBtn, TweenInfo.new(0.1, Enum.EasingStyle.Sine), {Size = UDim2.new(0, 170, 0, 40)}):Play()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Decal") or v:IsA("Texture") or v:IsA("ParticleEmitter") or v:IsA("Fire") or v:IsA("Smoke") then v:Destroy() end
+    end
+end)
+
+local VirtualUser = game:GetService("VirtualUser")
+Player.Idled:Connect(function() 
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new()) 
+end)
+
+local start = os.time()
+task.spawn(function()
+    while task.wait(0.5) do
+        if not isMinimized then
+            local d = os.time() - start
+            TxtTime.Text = string.format("  ⏳ %02d:%02d:%02d", math.floor(d/3600), math.floor((d%3600)/60), d%60)
+            TxtFPS.Text = "  🚀 FPS: " .. math.floor(1 / RunService.RenderStepped:Wait())
+            TxtMS.Text = "  📡 MS: " .. math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        end
+    end
+end)
+
+MainFrame.Position = UDim2.new(-0.3, 0, 0.4, 0)
+TweenService:Create(MainFrame, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.02, 0, 0.4, 0)}):Play()
